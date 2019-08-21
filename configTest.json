@@ -1,0 +1,7 @@
+{
+    "spotify":{
+        "cid":"abc",
+        "secret":"xyz",
+        "username":"user"
+    }
+}
