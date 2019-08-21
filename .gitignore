@@ -1,0 +1,2 @@
+#this will block the commit of the config file
+*.json
