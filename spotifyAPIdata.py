@@ -80,7 +80,9 @@ if token:
     	lengthResults2 = len(playlistTracks) #number of results returned based on limit
     	#print(lengthResults)
     	#print(lengthResults2)
-    	#if 
+    	#if lengthResults > lengthResults2
+        # divide lengthResults by 100, run loop that many times with offset 100
+        # check the modulo of lengthResults so we don't miss any after even 100s
 
     	for j in range(lengthResults2): #temp set to shorter of the two, until longer term fix instituted
     		uriList.append(playlistTracks[j]['track']['uri'])
