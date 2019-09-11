@@ -1,0 +1,14 @@
+{
+  "0": "C (or B# or Dbb)",
+  "1": "C# (or B## or Db)",
+  "2": "D (or C## or Ebb)",
+  "3": "D# (or Eb or Fbb)",
+  "4": "E (or B# or Dbb)",
+  "5": "F (or E# or Gbb)",
+  "6": "F# (or E## or Gb)",
+  "7": "G (or F## or Abb)",
+  "8": "G# (or Ab)",
+  "9": "A (or G## or Bbb)",
+  "10": "A# (or Bb or Cbb)",
+  "11": "B (or A## or Cb)"
+}
