@@ -1,0 +1,14 @@
+<html>
+    <head>
+      {% if title %}
+      <title>{{ title }} - Spotify Music Data Retrieval</title>
+      {% else %}
+      <title>Spotify Music Data Retrieval</title>
+      {% endif %}
+    </head>
+    <body>
+        <div>Spotify App: <a href={{ link }}>Refresh Token</a>
+        <hr>
+        {% block content %}{% endblock %}
+    </body>
+</html>
