@@ -2,14 +2,15 @@ import json
 from flask import Flask, request, redirect, g, render_template, jsonify
 import requests
 from urllib.parse import quote
-import datetime as dt
 from pymongo import MongoClient
+from datetime import date
 
-#set up db instance - will need to change this to create DB per each user
-#client = MongoClient('localhost', 27017)
-#authdb = client.authDB
-#collection = authdb['test']
+#grab date program is being run
+td = date.today()
+TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
 
+#set up db instance 
+client = MongoClient('localhost', 27017)
 
 with open('config.json') as json_data_file:
     configData = json.load(json_data_file)
@@ -98,6 +99,13 @@ def authed():
     profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
     profile_data = json.loads(profile_response.text)
     userName = profile_data["display_name"]
+
+    #set up db for user
+    dbName = str(TODAY) + str(userName)
+    db = client[dbName] # Creates db instance per user per date
+    #collection=db.test
+    #result = collection.insert_one({'name':'test'})
+
 
     return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
 
