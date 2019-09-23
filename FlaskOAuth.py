@@ -4,6 +4,7 @@ import requests
 from urllib.parse import quote
 from pymongo import MongoClient
 from datetime import date
+from spotifyClient import Spotify
 
 #grab date program is being run
 td = date.today()
@@ -94,18 +95,14 @@ def authed():
     #Auth Step 4: Refresh Token is used to get refreshed access token
     refreshPage = "{}?refresh_token={}&access_token={}".format(REFRESH_URL, refresh_token, access_token)
 
-    user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
-    authorization_header = {"Authorization": "Bearer {}".format(access_token)}
-    profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
-    profile_data = json.loads(profile_response.text)
-    userName = profile_data["display_name"]
+    p1 = Spotify(access_token)
+    userName = p1.profile()
 
     #set up db for user
     dbName = str(TODAY) + str(userName)
     db = client[dbName] # Creates db instance per user per date
     #collection=db.test
     #result = collection.insert_one({'name':'test'})
-
 
     return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
 
