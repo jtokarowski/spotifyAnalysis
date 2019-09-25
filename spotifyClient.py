@@ -126,11 +126,44 @@ class data:
         return response
 
     def userPlaylists(self):
-        user_playlist_api_endpoint = "{}/me/playlists".format(SPOTIFY_API_URL)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        response = requests.get(user_playlist_api_endpoint, headers=authorization_header)
+        api_endpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
+        
+        response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text)
 
-        #### UNPACK THIS RESPONSE, RETURN KEY COMPONENTS
+        playlistCount = response_data['total']
+        playlistCount2 = len(response_data['items'])
 
-        return response_data
+        for i in range(playlistCount2): #retrieve up to limit worth of playlists
+            currentPlayList = response_data['items'][i]
+            playlistName = currentPlayList['name']
+            uri = currentPlayList['uri']
+            #name the collection based on the playlist it is retrieving from
+            playlistName = playlistName.title()
+            playlistName = playlistName.replace(" ", "")
+            print(i, playlistName)
+            #collection = db[playlistName]
+
+        if playlistCount > playlistCount2:
+            print('playlist limit exceeded')
+            runs = int(round(playlistCount/50))
+            offset = 0
+            for m in range (runs):
+                offset += 50
+                new_api_endpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
+                response = requests.get(new_api_endpoint, headers=authorization_header)
+                response_data = json.loads(response.text)
+                playlistCount2 = len(response_data['items'])
+
+                for i in range(playlistCount2): #retrieve up to limit worth of playlist
+                    currentPlayList = response_data['items'][i]
+                    playlistName = currentPlayList['name']
+                    uri = currentPlayList['uri']
+                    #name the collection based on the playlist it is retrieving from
+                    playlistName = playlistName.title()
+                    playlistName = playlistName.replace(" ", "")
+                    print(50+i, playlistName)
+                    #collection = db[playlistName]
+
+        return 'ok'
