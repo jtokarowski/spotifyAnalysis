@@ -38,7 +38,6 @@ TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
 #set up db instance
 client = MongoClient('localhost', 27017)
 
-
 #construct auth request params
 auth_query_parameters = {
     "response_type": "code",
@@ -112,11 +111,19 @@ class data:
         self.access_token = access_token
 
     def profile(self):
+        
+        global userName
+        global dbName
+
         user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
         profile_data = json.loads(profile_response.text)
         userName = profile_data["display_name"]
+
+        #set up db for user
+        dbName = str(TODAY) + str(userName)
+        db = client[dbName] # Creates db instance per user per date
 
         response = {
         "userName": userName,
@@ -126,6 +133,12 @@ class data:
         return response
 
     def userPlaylists(self):
+        #connect to db
+        db = client[dbName]
+        collection = db['userPlaylists']
+
+        userPlaylists = []
+        
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
         
@@ -142,7 +155,11 @@ class data:
             #name the collection based on the playlist it is retrieving from
             playlistName = playlistName.title()
             playlistName = playlistName.replace(" ", "")
-            print(i, playlistName)
+
+            entry = {"uri":uri, "playlistName": playlistName}
+            userPlaylists.append(entry)
+
+            #print(i, playlistName)
             #collection = db[playlistName]
 
         if playlistCount > playlistCount2:
@@ -163,7 +180,12 @@ class data:
                     #name the collection based on the playlist it is retrieving from
                     playlistName = playlistName.title()
                     playlistName = playlistName.replace(" ", "")
-                    print(50+i, playlistName)
+                    entry = {"uri":uri, "playlistName": playlistName}
+                    userPlaylists.append(entry)
+                    #print(offset+i, playlistName)
                     #collection = db[playlistName]
+
+
+        results = collection.insert_many(userPlaylists)
 
         return 'ok'
