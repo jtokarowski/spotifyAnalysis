@@ -49,13 +49,8 @@ def authed():
     userName = p2.get("userName")
     refreshPage = "{}?refresh_token={}&access_token={}".format(p2.get("REFRESH_URL"), refresh_token, access_token)
 
-    #set up db for user
-    #dbName = str(TODAY) + str(userName)
-    #db = client[dbName] # Creates db instance per user per date
-
-    test = p1.userPlaylists()
-    print(test) #returns a mess of text, need to format in function
-
+    p1.userPlaylists()
+    p1.playlistTracks()
 
     return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
 

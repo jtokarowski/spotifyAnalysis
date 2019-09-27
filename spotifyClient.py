@@ -163,7 +163,7 @@ class data:
             #collection = db[playlistName]
 
         if playlistCount > playlistCount2:
-            print('playlist limit exceeded')
+            #print('playlist limit exceeded')
             runs = int(round(playlistCount/50))
             offset = 0
             for m in range (runs):
@@ -182,10 +182,62 @@ class data:
                     playlistName = playlistName.replace(" ", "")
                     entry = {"uri":uri, "playlistName": playlistName}
                     userPlaylists.append(entry)
-                    #print(offset+i, playlistName)
-                    #collection = db[playlistName]
-
 
         results = collection.insert_many(userPlaylists)
 
-        return 'ok'
+        return
+
+    def playlistTracks(self):
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+    	#retrieve playlist uris
+        db = client[dbName]
+        collection = db['userPlaylists']
+        cursor = collection.find({})
+
+        for document in cursor: #for each playlist in DB
+
+            playlistCollection = db[document['playlistName']]
+            print(document['playlistName'])
+            plid = document['uri']
+            fields = plid.split(':')
+            #feed uri to spotify tracks request
+            api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))&limit=100".format(SPOTIFY_API_URL, userName, fields[2])
+            response = requests.get(api_endpoint, headers=authorization_header)
+            response_data = json.loads(response.text)
+            print(response_data) #need id, artists and respective ids
+            input("Press Enter to continue...")
+
+            #unpack response
+
+            #insert into db
+
+            #catch the api limit error
+            songCount = response_data['total']
+            songCount2 = len(response_data['items']) #this corrects for 100 limit
+
+            offset = 0
+            #testing to see if we retrieved all songs
+            if songCount > songCount2:
+                print('playlist track limit exceeded')
+                runs = int(round(songCount/100))
+                for m in range (runs):
+                    offset += 100
+                    api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))limit=100&offset={}".format(SPOTIFY_API_URL, userName, fields[2],offset)
+                    response = requests.get(api_endpoint, headers=authorization_header)
+                    response_data = json.loads(response.text)
+                    data = response_data['items']
+                    print(data)
+                    input("Press Enter to continue...")
+
+                    #unpack response
+
+                    #insert into db
+                    
+            
+            #input("Press Enter to continue...")
+
+
+    	#mongo insert many
+        return
