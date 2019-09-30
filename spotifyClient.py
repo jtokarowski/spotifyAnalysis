@@ -123,7 +123,15 @@ class data:
 
         #set up db for user
         dbName = str(TODAY) + str(userName)
-        db = client[dbName] # Creates db instance per user per date
+        db = client[dbName] # Creates db instance per user per date, or reconnects
+
+        #remove old collections to start fresh
+        oldCollections = db.list_collection_names()
+        iterator = 0
+        for h in oldCollections:
+            db.drop_collection(oldCollections[iterator])
+            iterator += 1
+
 
         response = {
         "userName": userName,
@@ -152,40 +160,35 @@ class data:
             currentPlayList = response_data['items'][i]
             playlistName = currentPlayList['name']
             uri = currentPlayList['uri']
-            #name the collection based on the playlist it is retrieving from
             playlistName = playlistName.title()
             playlistName = playlistName.replace(" ", "")
-
             entry = {"uri":uri, "playlistName": playlistName}
             userPlaylists.append(entry)
 
-            #print(i, playlistName)
-            #collection = db[playlistName]
-
         if playlistCount > playlistCount2:
-            #print('playlist limit exceeded')
-            runs = int(round(playlistCount/50))
+            print('playlist limit exceeded')
+            runs = int(round(playlistCount/50)-1)
             offset = 0
             for m in range (runs):
                 offset += 50
                 new_api_endpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
                 response = requests.get(new_api_endpoint, headers=authorization_header)
                 response_data = json.loads(response.text)
-                playlistCount2 = len(response_data['items'])
+                playlistCount3 = len(response_data['items'])
 
-                for i in range(playlistCount2): #retrieve up to limit worth of playlist
+                for i in range(playlistCount3): #retrieve up to limit worth of playlists
                     currentPlayList = response_data['items'][i]
                     playlistName = currentPlayList['name']
                     uri = currentPlayList['uri']
-                    #name the collection based on the playlist it is retrieving from
                     playlistName = playlistName.title()
                     playlistName = playlistName.replace(" ", "")
                     entry = {"uri":uri, "playlistName": playlistName}
                     userPlaylists.append(entry)
 
         results = collection.insert_many(userPlaylists)
+        print("OK- got all playlists for user")
 
-        return
+        return results
 
     def playlistTracks(self):
 
@@ -198,46 +201,96 @@ class data:
 
         for document in cursor: #for each playlist in DB
 
+            #set blank list for all songs in playlist
+            songDataClean = []
+
+            #create collection for each playlist
             playlistCollection = db[document['playlistName']]
             print(document['playlistName'])
-            plid = document['uri']
-            fields = plid.split(':')
-            #feed uri to spotify tracks request
-            api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))&limit=100".format(SPOTIFY_API_URL, userName, fields[2])
+            uri = document['uri']
+            fields = uri.split(':')
+            plid = fields[2]
+
+            #get songs in playlist from API
+            api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)
             response = requests.get(api_endpoint, headers=authorization_header)
-            response_data = json.loads(response.text)
-            print(response_data) #need id, artists and respective ids
-            input("Press Enter to continue...")
 
             #unpack response
+            response_data = json.loads(response.text)
+            data = response_data['items'] #this is a list of dicts        
+    
+            for i in range(len(data)):
+                songInfo = {} 
 
-            #insert into db
+                trackId = data[i]['track']['id']
+                name = data[i]['track']['name']
+                name = name.title()
+                trackName = name.replace(" ", "")
+
+                songInfo['trackName'] = trackName
+                songInfo['trackId'] = trackId
+
+                artistList = data[i]['track']['artists']
+                artistNameList = []
+                artistIdList = []
+                for i in range(len(artistList)):
+                    artistName = artistList[i]['name']
+                    artistNameList.append(artistName)
+                    artistId = artistList[i]['id']
+                    artistIdList.append(artistId)
+
+                songInfo['artistNames'] = artistNameList
+                songInfo['artistIds'] = artistIdList
+
+                songDataClean.append(songInfo)
 
             #catch the api limit error
             songCount = response_data['total']
-            songCount2 = len(response_data['items']) #this corrects for 100 limit
+            songCount2 = len(response_data['items'])
 
             offset = 0
             #testing to see if we retrieved all songs
             if songCount > songCount2:
-                print('playlist track limit exceeded')
-                runs = int(round(songCount/100))
+                print('track limit exceeded')
+                runs = int(round(songCount/100)-1)
                 for m in range (runs):
                     offset += 100
-                    api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))limit=100&offset={}".format(SPOTIFY_API_URL, userName, fields[2],offset)
+                    api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, plid, offset)
                     response = requests.get(api_endpoint, headers=authorization_header)
                     response_data = json.loads(response.text)
-                    data = response_data['items']
-                    print(data)
-                    input("Press Enter to continue...")
+                    data = response_data['items']       
 
-                    #unpack response
+                    for i in range(len(data)):
+                        songInfo = {} 
 
-                    #insert into db
+                        trackId = data[i]['track']['id']
+                        name = data[i]['track']['name']
+                        name = name.title()
+                        trackName = name.replace(" ", "")
+
+                        songInfo['trackName'] = trackName
+                        songInfo['trackId'] = trackId
+
+                        artistList = data[i]['track']['artists']
+                        artistNameList = []
+                        artistIdList = []
+                        for i in range(len(artistList)):
+                            artistName = artistList[i]['name']
+                            artistNameList.append(artistName)
+                            artistId = artistList[i]['id']
+                            artistIdList.append(artistId)
+
+                        songInfo['artistNames'] = artistNameList
+                        songInfo['artistIds'] = artistIdList
+
+                        songDataClean.append(songInfo)
+
+
+            print(songDataClean)
+            results = playlistCollection.insert_many(songDataClean) #includes song id, artist info
+            print('done with',document['playlistName'], results)
+
+        print("OK- Got all Playlist Songs")
                     
             
-            #input("Press Enter to continue...")
-
-
-    	#mongo insert many
-        return
+        return results
