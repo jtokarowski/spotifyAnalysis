@@ -28,6 +28,7 @@ PORT = 8000
 REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
 REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
+PLAYLIST_URL = "{}:{}/playlist".format(CLIENT_SIDE_URL, PORT)
 SCOPE = "playlist-read-private"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
@@ -125,7 +126,7 @@ class data:
         dbName = str(TODAY) + str(userName)
         db = client[dbName] # Creates db instance per user per date, or reconnects
 
-        #remove old collections to start fresh
+        #remove old collections to start fresh if used before
         oldCollections = db.list_collection_names()
         iterator = 0
         for h in oldCollections:
@@ -135,7 +136,8 @@ class data:
 
         response = {
         "userName": userName,
-        "REFRESH_URL": REFRESH_URL
+        "REFRESH_URL": REFRESH_URL,
+        "PLAYLIST_URL": PLAYLIST_URL,
         }
 
         return response
@@ -166,7 +168,7 @@ class data:
             userPlaylists.append(entry)
 
         if playlistCount > playlistCount2:
-            print('playlist limit exceeded')
+            #print('playlist limit exceeded')
             runs = int(round(playlistCount/50)-1)
             offset = 0
             for m in range (runs):
@@ -186,9 +188,8 @@ class data:
                     userPlaylists.append(entry)
 
         results = collection.insert_many(userPlaylists)
-        print("OK- got all playlists for user")
 
-        return results
+        return "OK- got all playlists for user"
 
     def playlistTracks(self):
 
@@ -206,7 +207,7 @@ class data:
 
             #create collection for each playlist
             playlistCollection = db[document['playlistName']]
-            print(document['playlistName'])
+            #print(document['playlistName'])
             uri = document['uri']
             fields = uri.split(':')
             plid = fields[2]
@@ -251,7 +252,7 @@ class data:
             offset = 0
             #testing to see if we retrieved all songs
             if songCount > songCount2:
-                print('track limit exceeded')
+                #print('track limit exceeded')
                 runs = int(round(songCount/100)-1)
                 for m in range (runs):
                     offset += 100
@@ -286,11 +287,9 @@ class data:
                         songDataClean.append(songInfo)
 
 
-            print(songDataClean)
+            #print(songDataClean)
             results = playlistCollection.insert_many(songDataClean) #includes song id, artist info
             print('done with',document['playlistName'], results)
-
-        print("OK- Got all Playlist Songs")
                     
             
-        return results
+        return "OK- Got all Playlist Songs"

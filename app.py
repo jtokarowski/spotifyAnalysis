@@ -48,11 +48,12 @@ def authed():
     p2 = p1.profile()
     userName = p2.get("userName")
     refreshPage = "{}?refresh_token={}&access_token={}".format(p2.get("REFRESH_URL"), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(p2.get("PLAYLIST_URL"), refresh_token, access_token, expires_in)
 
-    p1.userPlaylists()
-    p1.playlistTracks()
+    #p1.userPlaylists()
+    #p1.playlistTracks()
 
-    return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
+    return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
 
 @app.route("/refresh")
 def refresh():
@@ -71,23 +72,20 @@ def refresh():
     return render_template("index.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
     
 
-@app.route("/playlists")
-def playlists():
+@app.route("/playlist")
+def playlist():
 
-    return "ok"
-    # Use the access token to access Spotify API
-    # #authorization_header = {"Authorization": "Bearer {}".format(access_token)}
+    #grab the tokens from the URL
+    access_token = request.args.get("access_token")
+    refresh_token = request.args.get("refresh_token")
+    token_type = "Bearer" #always bearer, don't need to grab this each request
+    expires_in = request.args["expires_in"]
+
+    p1 = data(access_token)
+    response = p1.userPlaylists()
+    response2 = p1.playlistTracks()
+
+    return [response, response2]
     
-    #return jsonify(access_token) #authorization_header
-
-    # # Get user playlist data
-    # playlist_api_endpoint = "{}/me/playlists".format(SPOTIFY_API_URL)
-    # playlists_response = requests.get(playlist_api_endpoint, headers=authorization_header)
-    # playlist_data = json.loads(playlists_response.text)
-
-    # # Combine profile and playlist data to display
-    # display_arr = playlist_data["items"]
-    # return render_template("index.html", sorted_array=display_arr)
-
 if __name__ == "__main__":
     app.run(debug=True, port=PORT)
