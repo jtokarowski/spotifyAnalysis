@@ -28,7 +28,8 @@ PORT = 8000
 REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
 REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
-PLAYLIST_URL = "{}:{}/playlist".format(CLIENT_SIDE_URL, PORT)
+PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
+PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 SCOPE = "playlist-read-private"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
@@ -55,6 +56,15 @@ class auth:
         url_args = "&".join(["{}={}".format(key, quote(val)) for key, val in auth_query_parameters.items()])
         auth_url = "{}/?{}".format(SPOTIFY_AUTH_URL, url_args)
         self.auth_url = auth_url
+
+    def refreshURL(self):
+        return REFRESH_URL
+
+    def playlistsURL(self):
+        return PLAYLISTS_URL
+
+    def playlistTracksURL(self):
+        return PLAYLIST_TRACKS_URL
 
     def get_accessToken(self, code):
         # Auth Step 2: Requests refresh and access tokens
@@ -135,9 +145,7 @@ class data:
 
 
         response = {
-        "userName": userName,
-        "REFRESH_URL": REFRESH_URL,
-        "PLAYLIST_URL": PLAYLIST_URL,
+        "userName": userName
         }
 
         return response
@@ -189,9 +197,9 @@ class data:
 
         results = collection.insert_many(userPlaylists)
 
-        return "OK- got all playlists for user"
+        return userPlaylists
 
-    def playlistTracks(self):
+    def allPlaylistTracks(self):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
@@ -293,3 +301,96 @@ class data:
                     
             
         return "OK- Got all Playlist Songs"
+
+
+    def playlistTracks(self, uri):
+        #get tracks for 1 playlist
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        #set blank list for all songs in playlist
+        songDataClean = []
+
+        uri = uri
+        fields = uri.split(':')
+        plid = fields[2]
+
+        #get songs in playlist from API
+        api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)
+        response = requests.get(api_endpoint, headers=authorization_header)
+
+        #unpack response
+        response_data = json.loads(response.text)
+        data = response_data['items'] #this is a list of dicts        
+    
+        for i in range(len(data)):
+            songInfo = {} 
+
+            trackId = data[i]['track']['id']
+            name = data[i]['track']['name']
+            name = name.title()
+            trackName = name.replace(" ", "")
+
+            songInfo['trackName'] = trackName
+            songInfo['trackId'] = trackId
+
+            artistList = data[i]['track']['artists']
+            artistNameList = []
+            artistIdList = []
+            for i in range(len(artistList)):
+                artistName = artistList[i]['name']
+                artistNameList.append(artistName)
+                artistId = artistList[i]['id']
+                artistIdList.append(artistId)
+
+            songInfo['artistNames'] = artistNameList
+            songInfo['artistIds'] = artistIdList
+
+            songDataClean.append(songInfo)
+
+        #catch the api limit error
+        songCount = response_data['total']
+        songCount2 = len(response_data['items'])
+
+        offset = 0
+        #testing to see if we retrieved all songs
+        if songCount > songCount2:
+            #print('track limit exceeded')
+            runs = int(round(songCount/100)-1)
+            for m in range (runs):
+                offset += 100
+                api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, plid, offset)
+                response = requests.get(api_endpoint, headers=authorization_header)
+                response_data = json.loads(response.text)
+                data = response_data['items']       
+
+                for i in range(len(data)):
+                    songInfo = {} 
+
+                    trackId = data[i]['track']['id']
+                    name = data[i]['track']['name']
+                    name = name.title()
+                    trackName = name.replace(" ", "")
+
+                    songInfo['trackName'] = trackName
+                    songInfo['trackId'] = trackId
+
+                    artistList = data[i]['track']['artists']
+                    artistNameList = []
+                    artistIdList = []
+                    for i in range(len(artistList)):
+                        artistName = artistList[i]['name']
+                        artistNameList.append(artistName)
+                        artistId = artistList[i]['id']
+                        artistIdList.append(artistId)
+
+                    songInfo['artistNames'] = artistNameList
+                    songInfo['artistIds'] = artistIdList
+
+                    songDataClean.append(songInfo)
+
+
+            #print(songDataClean)
+            #results = playlistCollection.insert_many(songDataClean) #includes song id, artist info             
+            
+        return songDataClean
+

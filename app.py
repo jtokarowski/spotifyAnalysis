@@ -44,11 +44,13 @@ def authed():
     token_type = "Bearer" #always bearer, don't need to grab this each request
     expires_in = request.args["expires_in"]
 
+    r1=auth()
+
     p1 = data(access_token)
     p2 = p1.profile()
     userName = p2.get("userName")
-    refreshPage = "{}?refresh_token={}&access_token={}".format(p2.get("REFRESH_URL"), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(p2.get("PLAYLIST_URL"), refresh_token, access_token, expires_in)
+    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
     #p1.userPlaylists()
     #p1.playlistTracks()
@@ -67,13 +69,14 @@ def refresh():
     p1 = data(access_token)
     p2 = p1.profile()
     userName = p2.get("userName")
-    refreshPage = "{}?refresh_token={}&access_token={}".format(p2.get("REFRESH_URL"), refresh_token, access_token)
+    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
-    return render_template("index.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, user=userName)
+    return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 
-@app.route("/playlist")
-def playlist():
+@app.route("/playlists")
+def playlists():
 
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
@@ -81,11 +84,42 @@ def playlist():
     token_type = "Bearer" #always bearer, don't need to grab this each request
     expires_in = request.args["expires_in"]
 
+
+    r1 = auth()
+    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+
     p1 = data(access_token)
     response = p1.userPlaylists()
-    response2 = p1.playlistTracks()
 
-    return [response, response2]
+    #build the link for each playlist
+    array = []
+    for playlist in response:
+        item = {}
+        item['playlistName'] = playlist['playlistName']
+        item['link'] = "{}?refresh_token={}&access_token={}&uri={}".format(r1.playlistTracksURL(), refresh_token, access_token, playlist['uri'])
+        array.append(item)
+    
+
+    return render_template("playlists.html", title='Playlists', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
+
+@app.route("/playlistTracks")
+def playlistTracks():
+
+    #grab the tokens from the URL
+    access_token = request.args.get("access_token")
+    refresh_token = request.args.get("refresh_token")
+    token_type = "Bearer" #always bearer, don't need to grab this each request
+    uri = request.args.get("uri")
+
+    r1 = auth()
+    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    p1 = data(access_token)
+
+    response = p1.playlistTracks(uri)
+
+    return render_template("playlistTracks.html", title='PlaylistTracks', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=response)
+
+
     
 if __name__ == "__main__":
     app.run(debug=True, port=PORT)
