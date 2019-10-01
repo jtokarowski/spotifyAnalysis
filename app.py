@@ -53,7 +53,7 @@ def authed():
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
     #p1.userPlaylists()
-    #p1.playlistTracks()
+    #p1.allPlaylistTracks()
 
     return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
 

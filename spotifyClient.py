@@ -201,106 +201,19 @@ class data:
 
     def allPlaylistTracks(self):
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
     	#retrieve playlist uris
         db = client[dbName]
         collection = db['userPlaylists']
         cursor = collection.find({})
 
         for document in cursor: #for each playlist in DB
-
-            #set blank list for all songs in playlist
-            songDataClean = []
-
-            #create collection for each playlist
             playlistCollection = db[document['playlistName']]
-            #print(document['playlistName'])
-            uri = document['uri']
-            fields = uri.split(':')
-            plid = fields[2]
-
-            #get songs in playlist from API
-            api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)
-            response = requests.get(api_endpoint, headers=authorization_header)
-
-            #unpack response
-            response_data = json.loads(response.text)
-            data = response_data['items'] #this is a list of dicts        
-    
-            for i in range(len(data)):
-                songInfo = {} 
-
-                trackId = data[i]['track']['id']
-                name = data[i]['track']['name']
-                name = name.title()
-                trackName = name.replace(" ", "")
-
-                songInfo['trackName'] = trackName
-                songInfo['trackId'] = trackId
-
-                artistList = data[i]['track']['artists']
-                artistNameList = []
-                artistIdList = []
-                for i in range(len(artistList)):
-                    artistName = artistList[i]['name']
-                    artistNameList.append(artistName)
-                    artistId = artistList[i]['id']
-                    artistIdList.append(artistId)
-
-                songInfo['artistNames'] = artistNameList
-                songInfo['artistIds'] = artistIdList
-
-                songDataClean.append(songInfo)
-
-            #catch the api limit error
-            songCount = response_data['total']
-            songCount2 = len(response_data['items'])
-
-            offset = 0
-            #testing to see if we retrieved all songs
-            if songCount > songCount2:
-                #print('track limit exceeded')
-                runs = int(round(songCount/100)-1)
-                for m in range (runs):
-                    offset += 100
-                    api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, plid, offset)
-                    response = requests.get(api_endpoint, headers=authorization_header)
-                    response_data = json.loads(response.text)
-                    data = response_data['items']       
-
-                    for i in range(len(data)):
-                        songInfo = {} 
-
-                        trackId = data[i]['track']['id']
-                        name = data[i]['track']['name']
-                        name = name.title()
-                        trackName = name.replace(" ", "")
-
-                        songInfo['trackName'] = trackName
-                        songInfo['trackId'] = trackId
-
-                        artistList = data[i]['track']['artists']
-                        artistNameList = []
-                        artistIdList = []
-                        for i in range(len(artistList)):
-                            artistName = artistList[i]['name']
-                            artistNameList.append(artistName)
-                            artistId = artistList[i]['id']
-                            artistIdList.append(artistId)
-
-                        songInfo['artistNames'] = artistNameList
-                        songInfo['artistIds'] = artistIdList
-
-                        songDataClean.append(songInfo)
-
-
-            #print(songDataClean)
+            currentPlaylistTracks = playlistTracks(document['uri'])
             results = playlistCollection.insert_many(songDataClean) #includes song id, artist info
             print('done with',document['playlistName'], results)
                     
             
-        return "OK- Got all Playlist Songs"
+        return "OK- Got all Playlist Songs and entered into DB"
 
 
     def playlistTracks(self, uri):
@@ -387,10 +300,6 @@ class data:
                     songInfo['artistIds'] = artistIdList
 
                     songDataClean.append(songInfo)
-
-
-            #print(songDataClean)
-            #results = playlistCollection.insert_many(songDataClean) #includes song id, artist info             
             
         return songDataClean
 
