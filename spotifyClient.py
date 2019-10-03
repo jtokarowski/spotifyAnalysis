@@ -30,6 +30,7 @@ AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
 REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
+PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
 SCOPE = "playlist-read-private"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
@@ -65,6 +66,9 @@ class auth:
 
     def playlistTracksURL(self):
         return PLAYLIST_TRACKS_URL
+
+    def playlistTrackFeaturesURL(self):
+        return PLAYLIST_TRACK_FEATURES_URL
 
     def get_accessToken(self, code):
         # Auth Step 2: Requests refresh and access tokens
@@ -214,6 +218,24 @@ class data:
                     
             
         return "OK- Got all Playlist Songs and entered into DB"
+
+    def getTrackFeatures(self, uri):
+
+        #get tracks for 1 playlist
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        #uri = uri
+        #print(uri)
+        #fields = uri.split(':')
+        #songid = fields[2]
+
+        api_endpoint = "{}/audio-features?ids={}".format(SPOTIFY_API_URL,uri)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text)
+            
+        return response_data
+
+
 
 
     def playlistTracks(self, uri):

@@ -117,8 +117,34 @@ def playlistTracks():
 
     response = p1.playlistTracks(uri)
 
-    return render_template("playlistTracks.html", title='PlaylistTracks', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=response)
+    #build the link for each song
+    array = []
+    for song in response:
+        item = {}
+        item['trackName'] = song['trackName']
+        item['link'] = "{}?refresh_token={}&access_token={}&uri={}".format(r1.playlistTrackFeaturesURL(), refresh_token, access_token, song['trackId'])
+        array.append(item)
 
+    return render_template("playlistTracks.html", title='PlaylistTracks', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
+
+@app.route("/playlistTrackFeatures")
+def playlistTrackFeatures():
+
+    access_token = request.args.get("access_token")
+    refresh_token = request.args.get("refresh_token")
+    token_type = "Bearer" #always bearer, don't need to grab this each request
+    uri = request.args.get("uri")
+
+    r1 = auth()
+    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    p1 = data(access_token)
+
+    array = []
+    trackAudioFeatures = p1.getTrackFeatures(uri)
+    array.append(trackAudioFeatures)
+
+
+    return render_template("playlistTrackFeatures.html", title='PlaylistTrackFeatures', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
 
     
 if __name__ == "__main__":
