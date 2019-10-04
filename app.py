@@ -87,8 +87,10 @@ def playlists():
 
     r1 = auth()
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
     p1 = data(access_token)
+    p1.profile #create class instance that grabs userName
     response = p1.userPlaylists()
 
     #build the link for each playlist
@@ -96,7 +98,7 @@ def playlists():
     for playlist in response:
         item = {}
         item['playlistName'] = playlist['playlistName']
-        item['link'] = "{}?refresh_token={}&access_token={}&uri={}".format(r1.playlistTracksURL(), refresh_token, access_token, playlist['uri'])
+        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
         array.append(item)
     
 
@@ -109,23 +111,26 @@ def playlistTracks():
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer" #always bearer, don't need to grab this each request
+    expires_in = request.args["expires_in"]
     uri = request.args.get("uri")
+    name = request.args.get('title')
 
     r1 = auth()
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
     p1 = data(access_token)
 
-    response = p1.playlistTracks(uri)
+    response = p1.getPlaylistTracks(uri)
 
     #build the link for each song
     array = []
     for song in response:
         item = {}
         item['trackName'] = song['trackName']
-        item['link'] = "{}?refresh_token={}&access_token={}&uri={}".format(r1.playlistTrackFeaturesURL(), refresh_token, access_token, song['trackId'])
+        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&trackName={}".format(r1.playlistTrackFeaturesURL(), refresh_token, access_token, expires_in, song['trackId'], song['trackName'])
         array.append(item)
 
-    return render_template("playlistTracks.html", title='PlaylistTracks', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
+    return render_template("playlistTracks.html", title='PlaylistTracks', pname=name, token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
 
 @app.route("/playlistTrackFeatures")
 def playlistTrackFeatures():
@@ -133,18 +138,29 @@ def playlistTrackFeatures():
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer" #always bearer, don't need to grab this each request
-    uri = request.args.get("uri")
+    expires_in = request.args["expires_in"]
 
+    trackName = request.args.get("trackName")
+    
+    uri = []
+    uri.append(request.args.get("uri"))
+    
     r1 = auth()
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
+    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
+    
     p1 = data(access_token)
-
     array = []
     trackAudioFeatures = p1.getTrackFeatures(uri)
-    array.append(trackAudioFeatures)
+
+    unpacked = trackAudioFeatures['audio_features'] #remove outer layer of dict
+    for item in unpacked:
+        array.append(item)
 
 
-    return render_template("playlistTrackFeatures.html", title='PlaylistTrackFeatures', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
+    #convert this to plot a graph of the audio features
+
+    return render_template("playlistTrackFeatures.html", title='PlaylistTrackFeatures', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, sorted_array=array, tname=trackName)
 
     
 if __name__ == "__main__":

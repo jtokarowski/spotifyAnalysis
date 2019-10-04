@@ -212,22 +212,24 @@ class data:
 
         for document in cursor: #for each playlist in DB
             playlistCollection = db[document['playlistName']]
-            currentPlaylistTracks = playlistTracks(document['uri'])
+            currentPlaylistTracks = getPlaylistTracks(document['uri'])
             results = playlistCollection.insert_many(songDataClean) #includes song id, artist info
-            print('done with',document['playlistName'], results)
-                    
+            print('done with',document['playlistName'], results)                  
             
         return "OK- Got all Playlist Songs and entered into DB"
 
     def getTrackFeatures(self, uri):
 
-        #get tracks for 1 playlist
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        #get audio features for 1 or more tracks
+        
+        if len(uri) == 1:
+            uri = uri[0]
+        else:
+            uri = ",".join(uri)
 
-        #uri = uri
-        #print(uri)
-        #fields = uri.split(':')
-        #songid = fields[2]
+        print(uri)
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
         api_endpoint = "{}/audio-features?ids={}".format(SPOTIFY_API_URL,uri)
         response = requests.get(api_endpoint, headers=authorization_header)
@@ -235,10 +237,7 @@ class data:
             
         return response_data
 
-
-
-
-    def playlistTracks(self, uri):
+    def getPlaylistTracks(self, uri):
         #get tracks for 1 playlist
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
