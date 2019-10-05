@@ -140,12 +140,16 @@ class data:
         dbName = str(TODAY) + str(userName)
         db = client[dbName] # Creates db instance per user per date, or reconnects
 
+
+        ######################
+
+        ##NEED TO RELOCATE THIS FUNCTION
         #remove old collections to start fresh if used before
-        oldCollections = db.list_collection_names()
-        iterator = 0
-        for h in oldCollections:
-            db.drop_collection(oldCollections[iterator])
-            iterator += 1
+        #oldCollections = db.list_collection_names()
+        #iterator = 0
+        #for h in oldCollections:
+        #    db.drop_collection(oldCollections[iterator])
+        #    iterator += 1
 
 
         response = {
@@ -203,17 +207,18 @@ class data:
 
         return userPlaylists
 
-    def allPlaylistTracks(self):
+    def allPlaylistTracks(self, token):
 
     	#retrieve playlist uris
         db = client[dbName]
         collection = db['userPlaylists']
         cursor = collection.find({})
+        d1 = data(token)
 
         for document in cursor: #for each playlist in DB
             playlistCollection = db[document['playlistName']]
-            currentPlaylistTracks = getPlaylistTracks(document['uri'])
-            results = playlistCollection.insert_many(songDataClean) #includes song id, artist info
+            currentPlaylistTracks = d1.getPlaylistTracks(document['uri'])
+            results = playlistCollection.insert_many(currentPlaylistTracks) #includes song id, artist info
             print('done with',document['playlistName'], results)                  
             
         return "OK- Got all Playlist Songs and entered into DB"
