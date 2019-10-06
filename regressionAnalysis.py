@@ -54,15 +54,23 @@ for document in cursor:
 
 df = pd.read_json(json.dumps(songs) , orient='records')
 
-print(df.head())
+#print(df.head())
+#print(df.shape)
 
-# need to import json into pandas dataframe
-# need to merge duplicates, set playlist inclusion to be a list
+# need to check if this fully works
+dropRows = df.duplicated(['trackId','collection'])
 
-# plt.scatter(energy, valence, color='C1')
 
-# plt.xlabel('energy')
-# plt.ylabel('valence')
-# plt.title("Simple Plot")
-# plt.show()
-        
+df.drop(dropRows,inplace=True)
+dummies = pd.get_dummies(df["collection"])
+newdf = df.join(dummies)
+
+#if collection = UBP, set indicator variable to 1
+#then drop duplicates
+#then run logReg
+
+#condense this 
+#df['Total'] = df.groupby(['Fullname', 'Zip'])['Amount'].transform('sum')
+
+print(newdf.columns.values)
+print(newdf.head())
