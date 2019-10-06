@@ -207,13 +207,13 @@ class data:
 
         return userPlaylists
 
-    def allPlaylistTracks(self, token):
+    def allPlaylistTracks(self):
 
     	#retrieve playlist uris
         db = client[dbName]
         collection = db['userPlaylists']
         cursor = collection.find({})
-        d1 = data(token)
+        d1 = data(self.access_token)
 
         for document in cursor: #for each playlist in DB
             playlistCollection = db[document['playlistName']]
@@ -223,14 +223,51 @@ class data:
             
         return "OK- Got all Playlist Songs and entered into DB"
 
+    def allTrackFeatures(self):
+
+        d1 = data(self.access_token)
+
+        db = client[dbName]
+        collections = db.list_collection_names()
+        iterator = 0
+        songList = []
+
+        for i in collections:
+            collection = collections[iterator]
+            iterator += 1
+            if collection == 'userPlaylists':
+                continue
+
+            cursor = db[collection].find({})
+            collectionName = collection
+
+            for document in cursor: #within playlist
+                newDoc = document
+                newDoc['collection'] = collectionName
+                newDoc['audioFeatures'] = d1.getTrackFeatures(document['trackId'])
+                songList.append(newDoc)
+
+
+            #super sloppy coding here, need to redo this grabbing 100 ids at a time
+
+            print(collection)
+
+        print('done with all collections')
+
+        newCollection = db['allSongInfo']
+        results = newCollection.insert_many(songList) #includes URI. collection, features
+
+        
+        return "OK- got all features for all tracks"
+
     def getTrackFeatures(self, uri):
 
         #get audio features for 1 or more tracks
         
-        if len(uri) == 1:
-            uri = uri[0]
-        else:
-            uri = ",".join(uri)
+        #if len(uri) == 1:
+        #    uri = uri[0]
+        #else:
+        #    uri = ",".join(uri)
 
         print(uri)
 
