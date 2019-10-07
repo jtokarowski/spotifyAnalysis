@@ -66,7 +66,8 @@ df.drop(dropRows,inplace=True)
 #df = df.groupby('trackId').agg({'trackId':'first', 'collection': ', '.join}).reset_index()
 df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
 df["UBP"] = df["collection"].map(lambda x: 1 if "UpbeatPiano" in x else 0)
-#df.loc[df['UBP'] == 1]
+
+#df.sort_values(by='valence',inplace=True, ascending=False)
 #print(df.head())
 
 x_train, x_test, y_train, y_test = train_test_split(df.drop('UBP',axis=1), df['UBP'], test_size=0.50, random_state=101)
@@ -76,9 +77,6 @@ x_testMap = x_test[['trackId','artistIds','collection']]
 
 x_train.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
 x_test.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
-
-#print(x_train.head())
-#print(x_test.head())
 
 #create an instance and fit the model 
 logmodel = LogisticRegression()
@@ -90,4 +88,20 @@ print(Predictions)
 print(classification_report(y_test,Predictions))
 print(confusion_matrix(y_test, Predictions))
 
+
+UBP = df.loc[df['UBP'] == 1]
+
+#playlist level
+sns.distplot(UBP['valence'].dropna(), kde=False, bins=20, color='Green')
+sns.distplot(UBP['energy'].dropna(), kde=False, bins=20, color='Blue')
+sns.distplot(UBP['danceability'].dropna(), kde=False, bins=20, color='Black')
+
+
+
+#population level
+#sns.distplot(df['valence'].dropna(), kde=False, bins=100, color='Green')
+#sns.distplot(df['energy'].dropna(), kde=False, bins=100, color='Blue')
+#sns.distplot(df['danceability'].dropna(), kde=False, bins=100, color='Black')
+
+plt.show()
 

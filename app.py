@@ -109,6 +109,8 @@ def playlists():
 @app.route("/playlistTracks")
 def playlistTracks():
 
+    #show the averages, ranges here to examine what the characteristics of a playlist are
+
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
@@ -154,6 +156,7 @@ def playlistTrackFeatures():
     p1 = data(access_token)
     array = []
     trackAudioFeatures = p1.getTrackFeatures(uri)
+
 
     unpacked = trackAudioFeatures['audio_features'] #remove outer layer of dict
     for item in unpacked:

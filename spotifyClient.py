@@ -264,12 +264,12 @@ class data:
 
         #get audio features for 1 or more tracks
         
-        #if len(uri) == 1:
-        #    uri = uri[0]
-        #else:
-        #    uri = ",".join(uri)
+        if len(uri) == 1:
+            uri = uri[0]
+        else:
+            uri = ",".join(uri)
 
-        print(uri)
+        #print(uri)
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
