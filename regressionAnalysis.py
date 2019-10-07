@@ -54,23 +54,16 @@ for document in cursor:
 
 df = pd.read_json(json.dumps(songs) , orient='records')
 
-#print(df.head())
-#print(df.shape)
-
 # need to check if this fully works
 dropRows = df.duplicated(['trackId','collection'])
 
-
+#print(df.columns.values)
 df.drop(dropRows,inplace=True)
-dummies = pd.get_dummies(df["collection"])
-newdf = df.join(dummies)
 
-#if collection = UBP, set indicator variable to 1
-#then drop duplicates
-#then run logReg
+#df = df.groupby('trackId').agg({'trackId':'first', 'collection': ', '.join}).reset_index()
+df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
 
-#condense this 
-#df['Total'] = df.groupby(['Fullname', 'Zip'])['Amount'].transform('sum')
+df["UBP"] = df["collection"].map(lambda x: 1 if "UpbeatPiano" in x else 0)
+df.loc[df['UBP'] == 1]
+print(df.head())
 
-print(newdf.columns.values)
-print(newdf.head())
