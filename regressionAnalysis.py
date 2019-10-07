@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()  # for plot styling
 import numpy as np
 import pandas as pd
-import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt 
 
 #set up mongo client
@@ -62,8 +65,29 @@ df.drop(dropRows,inplace=True)
 
 #df = df.groupby('trackId').agg({'trackId':'first', 'collection': ', '.join}).reset_index()
 df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
-
 df["UBP"] = df["collection"].map(lambda x: 1 if "UpbeatPiano" in x else 0)
-df.loc[df['UBP'] == 1]
-print(df.head())
+#df.loc[df['UBP'] == 1]
+#print(df.head())
+
+x_train, x_test, y_train, y_test = train_test_split(df.drop('UBP',axis=1), df['UBP'], test_size=0.50, random_state=101)
+
+x_trainMap = x_train[['trackId','artistIds','collection']]
+x_testMap = x_test[['trackId','artistIds','collection']] 
+
+x_train.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
+x_test.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
+
+#print(x_train.head())
+#print(x_test.head())
+
+#create an instance and fit the model 
+logmodel = LogisticRegression()
+logmodel.fit(x_train, y_train)
+#predictions
+Predictions = logmodel.predict(x_test)
+print(Predictions)
+
+print(classification_report(y_test,Predictions))
+print(confusion_matrix(y_test, Predictions))
+
 
