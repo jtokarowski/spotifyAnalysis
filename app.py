@@ -5,6 +5,7 @@ from urllib.parse import quote
 from pymongo import MongoClient
 from datetime import date
 from spotifyClient import data, auth
+from statisticalAnalysis import stats
 
 #grab date program is being run
 td = date.today()
@@ -51,6 +52,12 @@ def authed():
     userName = p2.get("userName")
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
+
+    test = stats()
+    
+    result = test.kMeans()
+
+    print(result)
 
     #p1.userPlaylists()
     #resp = p1.allPlaylistTracks()
