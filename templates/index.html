@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Successfully Authorized User: {{ user }}</h1>
-    <h2> <br></h2>
-    <body>Access Token: {{ token }}</body>
-    <br>
-    <br><body>Refresh Token: {{ refresh }}</body>
+    <h2>Successfully Authorized User: {{ user }}</h2>
+    <img src="{{ url }}" class="img-square">
+    <h2>Total Followers: {{ followCount }}</h2>
+    <body><br></body>
+    <h3>All Playlists<br></h3>
+    <body><br></body>
+
+    {% for item in sorted_array%}
+	<a href = {{ item.link }}>{{ item.playlistName }} </a>
+	<hr>
+	{% endfor %}
 {% endblock %}

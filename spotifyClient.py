@@ -135,6 +135,9 @@ class data:
         profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
         profile_data = json.loads(profile_response.text)
         userName = profile_data["display_name"]
+        followers = profile_data["followers"]
+        images = profile_data["images"]
+        #print(images)
 
         #set up db for user
         dbName = str(TODAY) + str(userName)
@@ -153,7 +156,9 @@ class data:
 
 
         response = {
-        "userName": userName
+        "userName": userName,
+        "images": images,
+        "followers": followers
         }
 
         return response

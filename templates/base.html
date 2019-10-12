@@ -1,4 +1,6 @@
 <html>
+    <font color="white">
+    <body bgcolor="555B66">
     <head>
       {% if title %}
       <title>{{ title }} - Spotify Music Data Retrieval</title>
@@ -7,9 +9,12 @@
       {% endif %}
     </head>
     <body>
-        <div>Spotify App: <a href={{ link }}>Refresh Token</a>
-        <div>Spotify App: <a href={{ link2 }}>Get User Playlists</a>
+        <div><a href={{ link }}>Refresh Auth Token</a>
+        {% if link2 %}
+            <div><a href={{ link2 }}>Get User Playlists</a>
+        {% endif %}
         <hr>
         {% block content %}{% endblock %}
     </body>
+    </font>
 </html>

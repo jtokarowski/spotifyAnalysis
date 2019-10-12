@@ -50,21 +50,35 @@ def authed():
     p1 = data(access_token)
     p2 = p1.profile()
     userName = p2.get("userName")
+    image = p2.get("images")
+    imgurl = image[0]['url']
+    followers = p2.get("followers")
+    followCount = followers['total']
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
-    test = stats()
+    response = p1.userPlaylists()
+
+    #build the link for each playlist
+    array = []
+    for playlist in response:
+        item = {}
+        item['playlistName'] = playlist['playlistName']
+        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
+        array.append(item)
     
-    result = test.kMeans()
 
-    print(result)
+    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
 
+    #test = stats()
+    #result = test.kMeans()
+    #print(result)
     #p1.userPlaylists()
     #resp = p1.allPlaylistTracks()
     #resp = p1.allTrackFeatures()
     #print(resp)
 
-    return render_template("index.html", title='Authenticated', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
+    #return render_template("index.html", title='Authenticated', followCount=followCount, link=refreshPage, link2=playlistsPage, user=userName)
 
 @app.route("/refresh")
 def refresh():
