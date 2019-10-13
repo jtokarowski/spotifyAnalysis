@@ -4,7 +4,7 @@ import requests
 from urllib.parse import quote
 from pymongo import MongoClient
 from datetime import date
-from spotifyClient import data, auth
+from spotifyClient import data, auth, create
 from statisticalAnalysis import stats
 import pandas as pd
 
@@ -62,14 +62,21 @@ def authed():
 
     response = p1.userPlaylists()
 
+    c1 = create(access_token)
+    #for i in range(10):
+    response2 = c1.newPlaylist(userName, str('kmeans'+str(1)))
+    plid = response2['uri']
+    uriList = "spotify:track:1SuyAVNwN6nxyoQl6W7Eg4"
+    response3 = c1.addSongs(plid,uriList)
+
     #resp = p1.allPlaylistTracks()
     #print(resp)
     #resp = p1.allTrackFeatures()
 
-    result = stats(db, 'Tracks20191013')
-    result.kMeans(10)
+   # result = stats(db, 'Tracks20191013')
+   # result.kMeans(10)
 
-    print(result.X.head())
+    #print(result.X.head())
 
     #build the link for each playlist
     array = []

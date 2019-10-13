@@ -31,7 +31,7 @@ REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
-SCOPE = "playlist-read-private"
+SCOPE = "playlist-modify-private"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
@@ -120,6 +120,30 @@ class auth:
 
         return refreshed_parameters
 
+class create:
+    def __init__(self, access_token):
+        self.access_token = access_token
+
+    def newPlaylist(self, userid, playlistName):
+
+        user_playlists_endpoint = "{}/users/{}/playlists".format(SPOTIFY_API_URL, userid)
+        
+        authorization_header = {"Authorization": "Bearer {} Content-Type: application/json".format(self.access_token)}
+        request_body = {"name":playlistName,"public":False}
+        response = requests.post(user_playlists_endpoint, headers=authorization_header, json=request_body)
+
+        response_data = json.loads(response.text)
+
+        return response_data
+
+    def addSongs(self, plid, uriList):
+
+        user_playlist_endpoint = "{}/playlists/{}/tracks".format(SPOTIFY_API_URL, plid)
+        authorization_header = {"Authorization": "Bearer {} Content-Type: application/json".format(self.access_token)}
+        request_body = {"uris":uriList}
+        response = requests.post(user_playlist_endpoint, headers=authorization_header, json=request_body)
+
+        return response
 
 class data:
     def __init__(self, access_token):
