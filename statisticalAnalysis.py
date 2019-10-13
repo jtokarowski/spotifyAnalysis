@@ -13,19 +13,17 @@ import matplotlib.pyplot as plt
 
 class stats:
 
-    def __init__(self):
-        #unpacks database     
-        #later- have this function take in the database name coming from app.py
+    def __init__(self, dbName, collection):
+        #unpacks database into dataframe     
         #set up mongo client
         client = MongoClient('localhost', 27017)
-        name = '20191005jtokarowski'
-        db = client[name] #this repo won't change, ok to run tests here
-        #collection = db.allSongInfo
-        cursor = db.allSongInfo.find({})  #temp DB that has all songs in it
+        db = client[dbName] 
+        dbCollection = db[collection]
+        cursor = dbCollection.find({})  #temp DB that has all songs in it
         #blank list for unpacked songs
         songs = []
         for document in cursor:
-            doc = document['audioFeatures']["audio_features"][0]
+            doc = document['audioFeatures']
             if doc==None:
                 continue
 
@@ -56,9 +54,10 @@ class stats:
             del document ['uri']
     
             songs.append(document)
-
+        
         #convert songs to dataFrame
         df = pd.read_json(json.dumps(songs) , orient='records')
+        
         #remove dupes in playlists
         dropRows = df.duplicated(['trackId','collection'])
         df.drop(dropRows,inplace=True)
@@ -92,11 +91,11 @@ class stats:
 
         return confMat
 
-    def kMeans(self):
+    def kMeans(self, means):
 
         X = self.df
 
-        kmeans = KMeans(n_clusters=5)
+        kmeans = KMeans(n_clusters=means)
         Xlabels = X[['trackId']]
         Xselect = X[['acousticness','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','valence']]
         kmeans.fit(Xselect)
@@ -104,10 +103,12 @@ class stats:
         X['kMeansAssignment'] = y_kmeans
         centers = kmeans.cluster_centers_
         
+        self.X = X
+        self.centers = centers
         #print(X)
         #print(centers)
 
-        return X
+        return
 
 
     #def plotting(self):

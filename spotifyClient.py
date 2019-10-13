@@ -137,7 +137,6 @@ class data:
         userName = profile_data["display_name"]
         followers = profile_data["followers"]
         images = profile_data["images"]
-        #print(images)
 
         #set up db for user
         dbName = str(TODAY) + str(userName)
@@ -158,7 +157,8 @@ class data:
         response = {
         "userName": userName,
         "images": images,
-        "followers": followers
+        "followers": followers,
+        "dbName": dbName
         }
 
         return response
@@ -166,6 +166,8 @@ class data:
     def userPlaylists(self):
         #connect to db
         db = client[dbName]
+        collection = db['userPlaylists']
+        db.drop_collection(db['userPlaylists']) #makes sure we don't dupe playlists
         collection = db['userPlaylists']
 
         userPlaylists = []
@@ -220,7 +222,7 @@ class data:
         cursor = collection.find({})
         d1 = data(self.access_token)
 
-        for document in cursor: #for each playlist in DB
+        for document in cursor: #for each playlist in DB, create collection, get songs
             playlistCollection = db[document['playlistName']]
             currentPlaylistTracks = d1.getPlaylistTracks(document['uri'])
             results = playlistCollection.insert_many(currentPlaylistTracks) #includes song id, artist info
@@ -230,12 +232,13 @@ class data:
 
     def allTrackFeatures(self):
 
+        #loops thru all collections, grabs features by track and stores in same collection
+
         d1 = data(self.access_token)
 
         db = client[dbName]
         collections = db.list_collection_names()
         iterator = 0
-        songList = []
 
         for i in collections:
             collection = collections[iterator]
@@ -243,38 +246,67 @@ class data:
             if collection == 'userPlaylists':
                 continue
 
-            cursor = db[collection].find({})
-            collectionName = collection
-
-            for document in cursor: #within playlist
-                newDoc = document
-                newDoc['collection'] = collectionName
-                newDoc['audioFeatures'] = d1.getTrackFeatures(document['trackId'])
-                songList.append(newDoc)
-
-
-            #super sloppy coding here, need to redo this grabbing 100 ids at a time
-
-            print(collection)
+            response = d1.playlistTrackFeatures(collection)
+            print(response)
 
         print('done with all collections')
-
-        newCollection = db['allSongInfo']
-        results = newCollection.insert_many(songList) #includes URI. collection, features
-
         
         return "OK- got all features for all tracks"
 
+    def playlistTrackFeatures(self, collectionName):
+
+        d1 = data(self.access_token)
+        db = client[dbName]
+        songList = [] #new tracklist for each playlist
+        uriList = [] #list for URIs to send to retrieval
+        collection = collectionName
+
+        cursor = db[collection].find({})
+        trackCount = cursor.count()
+        
+        for document in cursor: #within playlist
+            newDoc = document
+            newDoc['collection'] = collection
+            songList.append(newDoc)
+            if document['trackId'] == None:
+                uriList.append('None')
+            else:
+                uriList.append(document['trackId'])
+
+        # looping till length of list
+        allFeaturesList = []
+        n = 100
+        for i in range(0, len(uriList), n):  
+            listToSend = uriList[i:i + n]
+            response = d1.getTrackFeatures(listToSend)
+            extractedFeaturesList = response['audio_features']
+            for item in extractedFeaturesList:
+                allFeaturesList.append(item)
+
+        for k in range(len(songList)):
+            currentSong = songList[k]
+            currentSong['audioFeatures'] = allFeaturesList[k]
+
+        db.drop_collection(collection) #remove old collection
+        collection = db[collection] #reset the collection
+        results = collection.insert_many(songList)
+
+        return "done getting features for songs in " + str(collection)
+
     def getTrackFeatures(self, uri):
 
-        #get audio features for 1 or more tracks
+        #get audio features for 1 or more tracks (max of 100)
+
+        if uri == None:
+            return
         
-        if len(uri) == 1:
+        elif len(uri) ==0:
+            return
+
+        elif len(uri) == 1:
             uri = uri[0]
         else:
             uri = ",".join(uri)
-
-        #print(uri)
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 

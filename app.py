@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from datetime import date
 from spotifyClient import data, auth
 from statisticalAnalysis import stats
+import pandas as pd
 
 #grab date program is being run
 td = date.today()
@@ -54,10 +55,21 @@ def authed():
     imgurl = image[0]['url']
     followers = p2.get("followers")
     followCount = followers['total']
+    db = p2.get("dbName")
+
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
     response = p1.userPlaylists()
+
+    #resp = p1.allPlaylistTracks()
+    #print(resp)
+    #resp = p1.allTrackFeatures()
+
+    result = stats(db, 'Tracks20191013')
+    result.kMeans(10)
+
+    print(result.X.head())
 
     #build the link for each playlist
     array = []
@@ -70,8 +82,8 @@ def authed():
 
     return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
 
-    #test = stats()
-    #result = test.kMeans()
+    #test = stats(db)
+    #esult = test.kMeans()
     #print(result)
     #p1.userPlaylists()
     #resp = p1.allPlaylistTracks()
