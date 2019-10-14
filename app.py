@@ -60,16 +60,14 @@ def authed():
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
+
+    #issue with this retrieving only some of user playslists, fix tomorrow
+
     response = p1.userPlaylists()
 
-    #resp = p1.allPlaylistTracks()
+    resp = p1.allPlaylistTracks()
     #print(resp)
-    #resp = p1.allTrackFeatures()
-
-   # result = stats(db, 'Tracks20191013')
-   # result.kMeans(10)
-
-    #print(result.X.head())
+    resp = p1.allTrackFeatures()
 
     #build the link for each playlist
     array = []
@@ -79,16 +77,8 @@ def authed():
         item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
         array.append(item)
 
-    #test = stats(db)
-    #esult = test.kMeans()
-    #print(result)
-    #p1.userPlaylists()
-    #resp = p1.allPlaylistTracks()
-    #resp = p1.allTrackFeatures()
-    #print(resp)
-
     clusters = 10
-    result = stats('20191013jtokarowski', 'Tracks20191013')
+    result = stats('20191014jtokarowski', 'Tracks20191014')
     result.kMeans(clusters)
 
     #create playlists for each kmeans assignment

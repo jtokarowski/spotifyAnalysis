@@ -96,7 +96,7 @@ class stats:
 
         kmeans = KMeans(n_clusters=means)
         Xlabels = X[['trackId']]
-        Xselect = X[['acousticness','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','valence']]
+        Xselect = X[['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']]  #'key','loudness',
         kmeans.fit(Xselect)
         y_kmeans = kmeans.predict(Xselect)
         X['kMeansAssignment'] = y_kmeans
