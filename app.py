@@ -62,13 +62,6 @@ def authed():
 
     response = p1.userPlaylists()
 
-    c1 = create(access_token)
-    #for i in range(10):
-    response2 = c1.newPlaylist(userName, str('kmeans'+str(1)))
-    plid = response2['uri']
-    uriList = "spotify:track:1SuyAVNwN6nxyoQl6W7Eg4"
-    response3 = c1.addSongs(plid,uriList)
-
     #resp = p1.allPlaylistTracks()
     #print(resp)
     #resp = p1.allTrackFeatures()
@@ -85,9 +78,6 @@ def authed():
         item['playlistName'] = playlist['playlistName']
         item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
         array.append(item)
-    
-
-    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
 
     #test = stats(db)
     #esult = test.kMeans()
@@ -97,7 +87,35 @@ def authed():
     #resp = p1.allTrackFeatures()
     #print(resp)
 
-    #return render_template("index.html", title='Authenticated', followCount=followCount, link=refreshPage, link2=playlistsPage, user=userName)
+    clusters = 10
+    result = stats('20191013jtokarowski', 'Tracks20191013')
+    result.kMeans(clusters)
+
+    #create playlists for each kmeans assignment
+    c1 = create(access_token)
+    df = result.X
+    for i in range(clusters):
+        response2 = c1.newPlaylist(userName, str('kmeans'+str(i)))
+        r2 = response2['uri']
+        fields = r2.split(":")
+        plid = fields[2]
+
+        dfi = df.loc[df['kMeansAssignment'] == i]
+        dfi = dfi['trackId']
+        idList = dfi.values.tolist()
+        uriList=[]
+        for item in idList:
+            uriList.append("spotify:track:{}".format(item))
+
+        n = 50
+        for j in range(0, len(uriList), n):  
+            listToSend = uriList[j:j + n]
+            stringList = ",".join(listToSend)
+            response3 = c1.addSongs(plid, stringList)
+            print(response3)
+
+    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
+
 
 @app.route("/refresh")
 def refresh():

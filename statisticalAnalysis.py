@@ -51,7 +51,6 @@ class stats:
             del document['track_href']
             del document['_id']
             del document['analysis_url']
-            del document ['uri']
     
             songs.append(document)
         

@@ -138,10 +138,10 @@ class create:
 
     def addSongs(self, plid, uriList):
 
-        user_playlist_endpoint = "{}/playlists/{}/tracks".format(SPOTIFY_API_URL, plid)
-        authorization_header = {"Authorization": "Bearer {} Content-Type: application/json".format(self.access_token)}
-        request_body = {"uris":uriList}
-        response = requests.post(user_playlist_endpoint, headers=authorization_header, json=request_body)
+        user_playlist_endpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, plid,uriList)
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        #request_body = {"uris":uriList}
+        response = requests.post(user_playlist_endpoint, headers=authorization_header) #, json=request_body)
 
         return response
 
