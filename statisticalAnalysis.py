@@ -110,7 +110,48 @@ class stats:
         return
 
 
-    #def plotting(self):
+    def plotting(self):
+
+        df = self.X
+        data0 = df.loc[df['kMeansAssignment'] == 0]
+        data0.drop(['trackId','artistIds','key','loudness','tempo','time_signature','collection','kMeansAssignment'],axis=1,inplace=True)
+
+        data1 = df.loc[df['kMeansAssignment'] == 1]
+        data1.drop(['trackId','artistIds','key','loudness','tempo','time_signature','collection','kMeansAssignment'],axis=1,inplace=True)
+
+        #print(data1.head())
+        #input("waiting.........")
+
+        # data to plot
+        n_groups = 7
+        avg0 = data0.mean()
+        avg1 = data1.mean()
+        #means_frank = (90, 55, 40, 65)
+        #means_guido = (85, 62, 54, 20)
+
+        # create plot
+        fig, ax = plt.subplots()
+        index = np.arange(n_groups)
+        bar_width = 0.35
+        opacity = 0.8
+
+        rects1 = plt.bar(index, avg0, bar_width,
+            alpha=opacity,
+            color='b',
+            label='cluster0')
+
+        rects2 = plt.bar(index + bar_width, avg1, bar_width,
+            alpha=opacity,
+            color='g',
+            label='Guido')
+
+        plt.xlabel('Cluster')
+        plt.ylabel('Value')
+        #plt.title('Scores by person')
+        plt.xticks(index + bar_width, ('acousticness', 'danceability', 'energy', 'instrumentalness','liveness','speechiness','valence'))
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
         #UBP = df.loc[df['UBP'] == 1]
 
