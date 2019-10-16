@@ -87,30 +87,33 @@ def authed():
     result = stats('20191015jtokarowski', 'Tracks20191014')
     result.kMeans(clusters)
 
+    #print(result.X.head())
+
     #plotting section goes here
 
     #create playlists for each kmeans assignment
-    # c1 = create(access_token)
-    # df = result.X
-    # for i in range(clusters):
-    #     response2 = c1.newPlaylist(userName, str('kmeans'+str(i)))
-    #     r2 = response2['uri']
-    #     fields = r2.split(":")
-    #     plid = fields[2]
+    c1 = create(access_token)
+    df = result.X
+    print(df.head())
+    for i in range(clusters):
+        response2 = c1.newPlaylist(userName, str('kmeans'+str(i)))
+        r2 = response2['uri']
+        fields = r2.split(":")
+        plid = fields[2]
 
-    #     dfi = df.loc[df['kMeansAssignment'] == i]
-    #     dfi = dfi['trackId']
-    #     idList = dfi.values.tolist()
-    #     uriList=[]
-    #     for item in idList:
-    #         uriList.append("spotify:track:{}".format(item))
+        dfi = df.loc[df['kMeansAssignment'] == i]
+        dfi = dfi['trackId']
+        idList = dfi.values.tolist()
+        uriList=[]
+        for item in idList:
+            uriList.append("spotify:track:{}".format(item))
 
-    #     n = 50
-    #     for j in range(0, len(uriList), n):  
-    #         listToSend = uriList[j:j + n]
-    #         stringList = ",".join(listToSend)
-    #         response3 = c1.addSongs(plid, stringList)
-    #         print(response3)
+        n = 50
+        for j in range(0, len(uriList), n):  
+            listToSend = uriList[j:j + n]
+            stringList = ",".join(listToSend)
+            response3 = c1.addSongs(plid, stringList)
+            print(response3)
 
     return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
 
