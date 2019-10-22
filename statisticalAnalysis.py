@@ -90,11 +90,11 @@ class stats:
 
         return confMat
 
-    def kMeans(self, means):
+    def kMeans(self, featuresList, means):
 
         X = self.df
 
-        featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
+        #featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
         kmeans = KMeans(n_clusters=means)
         Xlabels = X[['trackId']]
         Xselect = X[featuresList]  #'key','loudness',

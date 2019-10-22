@@ -124,12 +124,15 @@ class create:
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def newPlaylist(self, userid, playlistName):
+    def newPlaylist(self, userid, playlistName, description=None):
+
+        if description is None:
+            description = "None"
 
         user_playlists_endpoint = "{}/users/{}/playlists".format(SPOTIFY_API_URL, userid)
         
         authorization_header = {"Authorization": "Bearer {} Content-Type: application/json".format(self.access_token)}
-        request_body = {"name":playlistName,"public":False}
+        request_body = {"name":playlistName,"public":False,"description":description}
         response = requests.post(user_playlists_endpoint, headers=authorization_header, json=request_body)
 
         response_data = json.loads(response.text)

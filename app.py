@@ -9,6 +9,8 @@ from statisticalAnalysis import stats
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
+from plots import plotting
+from flask_wtf import FlaskForm
 
 #grab date program is being run
 td = date.today()
@@ -19,6 +21,7 @@ client = MongoClient('localhost', 27017)
 
 #creates instance of app
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'you-will-never-guess'
 
 # Server-side Parameters
 CLIENT_SIDE_URL = "http://127.0.0.1"
@@ -62,9 +65,6 @@ def authed():
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
-
-    #issue with this retrieving only some of user playslists, fix tomorrow
-
     response = p1.userPlaylists()
 
     #resp = p1.allPlaylistTracks()
@@ -76,46 +76,67 @@ def authed():
     for playlist in response:
         item = {}
         item['playlistName'] = playlist['playlistName']
+        item['URI'] = playlist['uri']
+        #this might need to be changed, may not be intuitive
         item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
         array.append(item)
 
-    #offer user a link to run cluster analysis on a playlist
-    #then return stats on each cluster 
-    #bar chart, for each attribute one bar per cluster
-
+    #offer user choice of how many clusters
     clusters = 10
+    # take in user selection of playlists
+    #result = stats(db, playlists)
+    #temp bc all songs stored here
     result = stats('20191015jtokarowski', 'Tracks20191014')
-    result.kMeans(clusters)
+    # grab all songs
+    # check for dupes
+    # run analysis on all of it, return the clusters
+    featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
+    result.kMeans(featuresList, clusters)
+
+    # add option for user to decide if they want to create spotify playlists
+    # offer user cluster analysis (bar chart with each avg attribute)
 
     #print(result.X.head())
 
     #plotting section goes here
+    #p1 = plotting()
+    #p1.plot()
 
-    #create playlists for each kmeans assignment
-    c1 = create(access_token)
-    df = result.X
-    print(df.head())
-    for i in range(clusters):
-        response2 = c1.newPlaylist(userName, str('kmeans'+str(i)))
-        r2 = response2['uri']
-        fields = r2.split(":")
-        plid = fields[2]
 
-        dfi = df.loc[df['kMeansAssignment'] == i]
-        dfi = dfi['trackId']
-        idList = dfi.values.tolist()
-        uriList=[]
-        for item in idList:
-            uriList.append("spotify:track:{}".format(item))
+    # #create playlists for each kmeans assignment
+    # c1 = create(access_token)
+    # df = result.X
+    # centers = result.centers
+    # print(df.head())
+    # for i in range(clusters):
+    #     descript = ""
+    #     center = centers[i]
+    #     for j in range(len(featuresList)):
+    #         entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
+    #         descript = descript + entry
 
-        n = 50
-        for j in range(0, len(uriList), n):  
-            listToSend = uriList[j:j + n]
-            stringList = ",".join(listToSend)
-            response3 = c1.addSongs(plid, stringList)
-            print(response3)
+    #     response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+    #     r2 = response2['uri']
+    #     fields = r2.split(":")
+    #     plid = fields[2]
 
-    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl)
+    #     dfi = df.loc[df['kMeansAssignment'] == i]
+    #     dfi = dfi['trackId']
+    #     idList = dfi.values.tolist()
+    #     uriList=[]
+    #     for item in idList:
+    #         uriList.append("spotify:track:{}".format(item))
+
+    #     n = 50
+    #     for j in range(0, len(uriList), n):  
+    #         listToSend = uriList[j:j + n]
+    #         stringList = ",".join(listToSend)
+    #         response3 = c1.addSongs(plid, stringList)
+    #         print(response3)
+
+    form = FlaskForm()
+
+    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl, form=form)
 
 
 @app.route("/refresh")

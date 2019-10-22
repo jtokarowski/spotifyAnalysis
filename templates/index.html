@@ -7,9 +7,12 @@
     <body><br></body>
     <h3>All Playlists<br></h3>
     <body><br></body>
-
-    {% for item in sorted_array%}
-	<a href = {{ item.link }}>{{ item.playlistName }} </a>
-	<hr>
-	{% endfor %}
+    <form action="" method="post" novalidate>
+        {% for item in sorted_array%}
+	    <input type="checkbox" name="playlistURI" value={{ item.URI }}>
+        <a href = {{ item.link }}>{{ item.playlistName }} </a>
+	    <hr>
+	    {% endfor %}
+        <input type="submit" value="Submit">
+    </form>
 {% endblock %}
