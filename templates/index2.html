@@ -6,8 +6,12 @@
     <body><br></body>
     <h3>All Playlists<br></h3>
     <body><br></body>
-    {% for item in sorted_array%}
-        <a href = {{ item.link }}>{{ item.playlistName }} </a>
-	    <hr>
-	{% endfor %}
+    <html>
+    <body>
+        <form method="post">
+            {{ form.csrf_token }}
+            {{ form.example }}
+            <input type="submit">
+        </form>
+    </body>
 {% endblock %}

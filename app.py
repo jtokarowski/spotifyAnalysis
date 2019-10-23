@@ -11,6 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from plots import plotting
 from flask_wtf import FlaskForm
+from wtforms import widgets, SelectMultipleField
+
+SECRET_KEY = 'development'
 
 #grab date program is being run
 td = date.today()
@@ -21,13 +24,26 @@ client = MongoClient('localhost', 27017)
 
 #creates instance of app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'you-will-never-guess'
+app.config.from_object(__name__)
 
 # Server-side Parameters
 CLIENT_SIDE_URL = "http://127.0.0.1"
 PORT = 8000
 
-@app.route("/")
+#set up the checkbix classes
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
+
+
+class SimpleForm(FlaskForm):
+    string_of_files = ['one\r\ntwo\r\nthree\r\n']
+    list_of_files = string_of_files[0].split()
+    # create a list of value/description tuples
+    files = [(x, x) for x in list_of_files]
+    example = MultiCheckboxField('Label', choices=files)
+
+@app.route("/",methods=["GET","POST"])
 def index():
     # Auth Step 1: Authorize Spotify User
     u1 = auth()
@@ -42,7 +58,7 @@ def callback():
     newPage = t1.get_accessToken(request.args['code'])
     return redirect(newPage)
 
-@app.route("/authed")
+@app.route("/authed", methods=["GET","POST"])
 def authed():
 
     #grab the tokens from the URL
@@ -64,6 +80,7 @@ def authed():
 
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
+    analysisPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.analysisURL(), refresh_token, access_token, expires_in)
 
     response = p1.userPlaylists()
 
@@ -133,11 +150,24 @@ def authed():
     #         stringList = ",".join(listToSend)
     #         response3 = c1.addSongs(plid, stringList)
     #         print(response3)
+    form = SimpleForm()
+    if form.validate_on_submit():
+        print(form.example.data)
+        return redirect(analysisPage) # need to redirect to analysis, including necessary keys
+    else:
+        print(form.errors)
 
-    form = FlaskForm()
+    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl, form=form)
 
-    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl, form=form)
+@app.route("/analysis", methods=["GET","POST"])
+def analysis():
 
+    access_token = request.args.get("access_token")
+    refresh_token = request.args.get("refresh_token")
+    token_type = "Bearer" #always bearer, don't need to grab this each request
+    expires_in = request.args["expires_in"]
+
+    return("here")
 
 @app.route("/refresh")
 def refresh():

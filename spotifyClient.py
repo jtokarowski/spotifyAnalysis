@@ -28,6 +28,7 @@ PORT = 8000
 REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
 REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
+ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
@@ -63,6 +64,9 @@ class auth:
 
     def playlistsURL(self):
         return PLAYLISTS_URL
+
+    def analysisURL(self):
+        return ANALYSIS_URL
 
     def playlistTracksURL(self):
         return PLAYLIST_TRACKS_URL
