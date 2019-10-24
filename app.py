@@ -30,18 +30,21 @@ app.config.from_object(__name__)
 CLIENT_SIDE_URL = "http://127.0.0.1"
 PORT = 8000
 
-#set up the checkbix classes
+class listOfFiles():
+    def __init__(self, userDefList):
+        self.list = userDefList
+
+#set up the checkbox classes
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
     option_widget = widgets.CheckboxInput()
 
-
 class SimpleForm(FlaskForm):
-    string_of_files = ['one\r\ntwo\r\nthree\r\n']
-    list_of_files = string_of_files[0].split()
+    list_of_files = ['spotify:playlist:3CBHb4fo2lnwDdVLTikxnC']
     # create a list of value/description tuples
     files = [(x, x) for x in list_of_files]
     example = MultiCheckboxField('Label', choices=files)
+
 
 @app.route("/",methods=["GET","POST"])
 def index():
@@ -90,6 +93,7 @@ def authed():
 
     #build the link for each playlist
     array = []
+    URIs = []
     for playlist in response:
         item = {}
         item['playlistName'] = playlist['playlistName']
@@ -97,6 +101,7 @@ def authed():
         #this might need to be changed, may not be intuitive
         item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
         array.append(item)
+        URIs.append(playlist['uri'])
 
     #offer user choice of how many clusters
     clusters = 10
@@ -150,6 +155,9 @@ def authed():
     #         stringList = ",".join(listToSend)
     #         response3 = c1.addSongs(plid, stringList)
     #         print(response3)
+    
+    test = listOfFiles(['spotify:playlist:3CBHb4fo2lnwDdVLTikxnC'])
+    print(test.list)
     form = SimpleForm()
     if form.validate_on_submit():
         print(form.example.data)

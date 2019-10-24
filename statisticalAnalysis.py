@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 class stats:
 
     def __init__(self, dbName, collection):
-        #unpacks database into dataframe     
+        #unpacks database collection into dataframe
+
         #set up mongo client
         client = MongoClient('localhost', 27017)
         db = client[dbName] 
@@ -89,6 +90,15 @@ class stats:
         confMat = confusion_matrix(y_test, Predictions)
 
         return confMat
+
+    def removeDupes(self):
+        X = self.df
+        X.drop_duplicates('trackId', inplace = True)
+        df.reset_index(inplace=True)
+        self.df = X
+
+        return
+
 
     def kMeans(self, featuresList, means):
 
