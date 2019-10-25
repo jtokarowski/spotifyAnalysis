@@ -348,8 +348,11 @@ class data:
         return response_data
 
     def getPlaylistTracks(self, uri):
-        #get tracks for 1 playlist
+        #get tracks for 1 playlist, insert into DB
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        #db setup
+        db = client[dbName]
 
         #set blank list for all songs in playlist
         songDataClean = []
@@ -357,6 +360,8 @@ class data:
         uri = uri
         fields = uri.split(':')
         plid = fields[2]
+
+        playlistCollection = db[plid] #name collection by playlistUri
 
         #get songs in playlist from API
         api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)

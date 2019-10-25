@@ -94,13 +94,15 @@ class stats:
     def removeDupes(self):
         X = self.df
         X.drop_duplicates('trackId', inplace = True)
-        df.reset_index(inplace=True)
+        X.reset_index(inplace=True)
         self.df = X
 
         return
 
 
     def kMeans(self, featuresList, means):
+
+        stats.removeDupes(self)
 
         X = self.df
 

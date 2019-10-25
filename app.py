@@ -30,22 +30,6 @@ app.config.from_object(__name__)
 CLIENT_SIDE_URL = "http://127.0.0.1"
 PORT = 8000
 
-class listOfFiles():
-    def __init__(self, userDefList):
-        self.list = userDefList
-
-#set up the checkbox classes
-class MultiCheckboxField(SelectMultipleField):
-    widget = widgets.ListWidget(prefix_label=False)
-    option_widget = widgets.CheckboxInput()
-
-class SimpleForm(FlaskForm):
-    list_of_files = ['spotify:playlist:3CBHb4fo2lnwDdVLTikxnC']
-    # create a list of value/description tuples
-    files = [(x, x) for x in list_of_files]
-    example = MultiCheckboxField('Label', choices=files)
-
-
 @app.route("/",methods=["GET","POST"])
 def index():
     # Auth Step 1: Authorize Spotify User
@@ -87,31 +71,68 @@ def authed():
 
     response = p1.userPlaylists()
 
-    #resp = p1.allPlaylistTracks()
-    #print(resp)
-    #resp = p1.allTrackFeatures()
-
     #build the link for each playlist
-    array = []
-    URIs = []
+    playlists = []
     for playlist in response:
-        item = {}
-        item['playlistName'] = playlist['playlistName']
-        item['URI'] = playlist['uri']
-        #this might need to be changed, may not be intuitive
-        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
-        array.append(item)
-        URIs.append(playlist['uri'])
+        pl = (playlist['uri'],playlist['playlistName'])
+        playlists.append(pl)
+
+    #set up the checkbox classes
+    class MultiCheckboxField(SelectMultipleField):
+        widget = widgets.ListWidget(prefix_label=False)
+        option_widget = widgets.CheckboxInput()
+
+    class SimpleForm(FlaskForm):
+        # create a list of value/description tuples
+        files = [(x, y) for x,y in playlists]
+        playlistSelections = MultiCheckboxField('Label', choices=files)
+
+    form = SimpleForm()
+    if form.validate_on_submit():
+        formData = form.playlistSelections.data
+        dataString = ",".join(formData)
+        analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
+        return redirect(analysisPageSelections) # need to redirect to analysis, including necessary keys
+    else:
+        print(form.errors)
+
+    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, url=imgurl, form=form)
+
+@app.route("/analysis", methods=["GET"])
+def analysis():
+
+    access_token = request.args.get("access_token")
+    refresh_token = request.args.get("refresh_token")
+    token_type = "Bearer" #always bearer, don't need to grab this each request
+    expires_in = request.args["expires_in"]
+    pldata = request.args["data"]
+
+    unpackedData = pldata.split(",")
+
+    p1 = data(access_token)
+    p2 = p1.profile()
+    dbName = p2.get("dbName")
+    userName = p2.get("userName")
+
+    db = client[dbName]
+    collection='MASTER'
+    mongoCollection = db[collection]
+
+    #retrieve songs and analysis for user selected playlists, store in DB
+    masterSongList=[]
+    for i in range(len(unpackedData)):
+        result = p1.getPlaylistTracks(unpackedData[i])
+        for i in range(len(result)):
+            masterSongList.append(result[i])
+
+    results = mongoCollection.insert_many(masterSongList) #includes song id, artist info
+
+    p1.playlistTrackFeatures(collection)
 
     #offer user choice of how many clusters
     clusters = 10
     # take in user selection of playlists
-    #result = stats(db, playlists)
-    #temp bc all songs stored here
-    result = stats('20191015jtokarowski', 'Tracks20191014')
-    # grab all songs
-    # check for dupes
-    # run analysis on all of it, return the clusters
+    result = stats(dbName, collection)
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     result.kMeans(featuresList, clusters)
 
@@ -126,56 +147,37 @@ def authed():
 
 
     # #create playlists for each kmeans assignment
-    # c1 = create(access_token)
-    # df = result.X
-    # centers = result.centers
-    # print(df.head())
-    # for i in range(clusters):
-    #     descript = ""
-    #     center = centers[i]
-    #     for j in range(len(featuresList)):
-    #         entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
-    #         descript = descript + entry
+    c1 = create(access_token)
+    df = result.X
+    centers = result.centers
+    for i in range(clusters):
+        descript = ""
+        center = centers[i]
+        for j in range(len(featuresList)):
+            entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
+            descript = descript + entry
 
-    #     response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
-    #     r2 = response2['uri']
-    #     fields = r2.split(":")
-    #     plid = fields[2]
+        response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+        r2 = response2['uri']
+        fields = r2.split(":")
+        plid = fields[2]
 
-    #     dfi = df.loc[df['kMeansAssignment'] == i]
-    #     dfi = dfi['trackId']
-    #     idList = dfi.values.tolist()
-    #     uriList=[]
-    #     for item in idList:
-    #         uriList.append("spotify:track:{}".format(item))
+        dfi = df.loc[df['kMeansAssignment'] == i]
+        dfi = dfi['trackId']
+        idList = dfi.values.tolist()
+        uriList=[]
+        for item in idList:
+            uriList.append("spotify:track:{}".format(item))
 
-    #     n = 50
-    #     for j in range(0, len(uriList), n):  
-    #         listToSend = uriList[j:j + n]
-    #         stringList = ",".join(listToSend)
-    #         response3 = c1.addSongs(plid, stringList)
-    #         print(response3)
-    
-    test = listOfFiles(['spotify:playlist:3CBHb4fo2lnwDdVLTikxnC'])
-    print(test.list)
-    form = SimpleForm()
-    if form.validate_on_submit():
-        print(form.example.data)
-        return redirect(analysisPage) # need to redirect to analysis, including necessary keys
-    else:
-        print(form.errors)
+        n = 50
+        for j in range(0, len(uriList), n):  
+            listToSend = uriList[j:j + n]
+            stringList = ",".join(listToSend)
+            response3 = c1.addSongs(plid, stringList)
+            #print(response3)
 
-    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, sorted_array=array, url=imgurl, form=form)
-
-@app.route("/analysis", methods=["GET","POST"])
-def analysis():
-
-    access_token = request.args.get("access_token")
-    refresh_token = request.args.get("refresh_token")
-    token_type = "Bearer" #always bearer, don't need to grab this each request
-    expires_in = request.args["expires_in"]
-
-    return("here")
+    return("Completed K-Means Analysis for selected playlists, created playlists in Spotify")
+    #LATER - make this where the results will be displayed as a bar chart
 
 @app.route("/refresh")
 def refresh():
