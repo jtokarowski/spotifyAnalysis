@@ -169,6 +169,9 @@ class data:
         followers = profile_data["followers"]
         images = profile_data["images"]
 
+        #strips username to avoid error if user is from FB, name has a space
+        userName.replace(" ","")
+
         #set up db for user
         dbName = str(TODAY) + str(userName)
         db = client[dbName] # Creates db instance per user per date, or reconnects
