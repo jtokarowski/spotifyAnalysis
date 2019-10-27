@@ -32,7 +32,7 @@ ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
-SCOPE = "playlist-modify-private"
+SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
@@ -165,12 +165,23 @@ class data:
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
         profile_data = json.loads(profile_response.text)
-        userName = profile_data["display_name"]
+
+        uri = profile_data["uri"]
+        fields = uri.split(':')
+        userName = fields[2]
         followers = profile_data["followers"]
         images = profile_data["images"]
 
         #strips username to avoid error if user is from FB, name has a space
-        userName.replace(" ","")
+        userName = str(userName)
+        newstr = ""
+        for char in userName:
+            if char == ' ':
+                continue
+            else:
+                newstr += char
+
+        userName = newstr
 
         #set up db for user
         dbName = str(TODAY) + str(userName)

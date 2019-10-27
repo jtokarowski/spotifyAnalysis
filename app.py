@@ -60,7 +60,11 @@ def authed():
     p2 = p1.profile()
     userName = p2.get("userName")
     image = p2.get("images")
-    imgurl = image[0]['url']
+    if len(image) == 0:
+        imgurl = 'N/A'
+    else:
+        imgurl = image[0]['url']
+        
     followers = p2.get("followers")
     followCount = followers['total']
     db = p2.get("dbName")
@@ -158,6 +162,7 @@ def analysis():
             descript = descript + entry
 
         response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+        print(response2)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
