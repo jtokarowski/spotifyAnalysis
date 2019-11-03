@@ -107,7 +107,7 @@ class stats:
         X = self.df
 
         #featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
-        kmeans = KMeans(n_clusters=means)
+        kmeans = KMeans(n_clusters=means, random_state=101,init='random')
         Xlabels = X[['trackId']]
         Xselect = X[featuresList]  #'key','loudness',
         kmeans.fit(Xselect)
@@ -125,13 +125,13 @@ class stats:
         return
 
     def euclideanDistance(x, featuresList, centers):
-            totalEuclideanDistance = 0
-            assignedCenter = centers[x['kMeansAssignment']]
-            for i in range(len(featuresList)):
-                diff = (x[featuresList[i]]*100) - (assignedCenter[i]*100)
-                totalEuclideanDistance += diff * diff
+        totalEuclideanDistance = 0
+        assignedCenter = centers[x['kMeansAssignment']]
+        for i in range(len(featuresList)):
+            diff = (x[featuresList[i]]*100) - (assignedCenter[i]*100)
+            totalEuclideanDistance += diff * diff
 
-            return totalEuclideanDistance
+        return totalEuclideanDistance
 
 
     def plotting(self):

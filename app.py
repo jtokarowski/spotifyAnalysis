@@ -149,42 +149,38 @@ def analysis():
     #charting functionality
     labels=featuresList
 
+    
+
+
+    #create playlists for each kmeans assignment
+    c1 = create(access_token)
+    for i in range(clusters):
+        descript = ""
+        center = centers[i]
+        for j in range(len(featuresList)):
+            entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
+            descript = descript + entry
+
+        response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+        r2 = response2['uri']
+        fields = r2.split(":")
+        plid = fields[2]
+
+        dfi = df.loc[df['kMeansAssignment'] == i]
+        dfi = dfi['trackId']
+        idList = dfi.values.tolist()
+        uriList=[]
+        for item in idList:
+            uriList.append("spotify:track:{}".format(item))
+
+        n = 50 #spotify playlist addition limit
+        for j in range(0, len(uriList), n):  
+            listToSend = uriList[j:j + n]
+            stringList = ",".join(listToSend)
+            response3 = c1.addSongs(plid, stringList)
+            #print(response3)
     return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=labels, centers = centers)
-
-    # #p1 = plotting()
-    # #p1.plot()
-
-
-    # #create playlists for each kmeans assignment
-    # c1 = create(access_token)
-    # for i in range(clusters):
-    #     descript = ""
-    #     center = centers[i]
-    #     for j in range(len(featuresList)):
-    #         entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
-    #         descript = descript + entry
-
-    #     response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
-    #     r2 = response2['uri']
-    #     fields = r2.split(":")
-    #     plid = fields[2]
-
-    #     dfi = df.loc[df['kMeansAssignment'] == i]
-    #     dfi = dfi['trackId']
-    #     idList = dfi.values.tolist()
-    #     uriList=[]
-    #     for item in idList:
-    #         uriList.append("spotify:track:{}".format(item))
-
-    #     n = 50 #spotify playlist addition limit
-    #     for j in range(0, len(uriList), n):  
-    #         listToSend = uriList[j:j + n]
-    #         stringList = ",".join(listToSend)
-    #         response3 = c1.addSongs(plid, stringList)
-    #         #print(response3)
-
-    # return("Completed K-Means Analysis for selected playlists, created playlists in Spotify")
-    # #LATER - make this where the results will be displayed as a bar chart
+    
 
 @app.route("/refresh")
 def refresh():
