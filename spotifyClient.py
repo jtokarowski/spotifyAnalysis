@@ -259,45 +259,6 @@ class data:
 
         return userPlaylists
 
-    def allPlaylistTracks(self):
-
-    	#retrieve playlist uris
-        db = client[dbName]
-        collection = db['userPlaylists']
-        cursor = collection.find({})
-        d1 = data(self.access_token)
-
-        for document in cursor: #for each playlist in DB, create collection, get songs
-            playlistCollection = db[document['playlistName']]
-            currentPlaylistTracks = d1.getPlaylistTracks(document['uri'])
-            results = playlistCollection.insert_many(currentPlaylistTracks) #includes song id, artist info
-            print('done with',document['playlistName'], results)                  
-            
-        return "OK- Got all Playlist Songs and entered into DB"
-
-    def allTrackFeatures(self):
-
-        #loops thru all collections, grabs features by track and stores in same collection
-
-        d1 = data(self.access_token)
-
-        db = client[dbName]
-        collections = db.list_collection_names()
-        iterator = 0
-
-        for i in collections:
-            collection = collections[iterator]
-            iterator += 1
-            if collection == 'userPlaylists':
-                continue
-
-            response = d1.playlistTrackFeatures(collection)
-            print(response)
-
-        print('done with all collections')
-        
-        return "OK- got all features for all tracks"
-
     def playlistTrackFeatures(self, collectionName):
 
         d1 = data(self.access_token)

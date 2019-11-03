@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request, redirect, render_template, jsonify
+from flask import Flask, Markup, request, redirect, render_template, jsonify
 import requests
 from urllib.parse import quote
 from pymongo import MongoClient
@@ -65,8 +65,6 @@ def authed():
     else:
         imgurl = image[0]['url']
         
-    followers = p2.get("followers")
-    followCount = followers['total']
     db = p2.get("dbName")
 
     refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
@@ -96,11 +94,11 @@ def authed():
         formData = form.playlistSelections.data
         dataString = ",".join(formData)
         analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
-        return redirect(analysisPageSelections) # need to redirect to analysis, including necessary keys
+        return redirect(analysisPageSelections) 
     else:
         print(form.errors)
 
-    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, followCount=followCount, link=refreshPage, url=imgurl, form=form)
+    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
 
 @app.route("/analysis", methods=["GET"])
 def analysis():
@@ -134,7 +132,8 @@ def analysis():
     p1.playlistTrackFeatures(collection)
 
     #offer user choice of how many clusters
-    clusters = 10
+    clusters = 5
+
     # take in user selection of playlists
     result = stats(dbName, collection)
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
@@ -144,45 +143,48 @@ def analysis():
     # offer user cluster analysis (bar chart with each avg attribute)
 
     #print(result.X.head())
+    df = result.X
+    centers = result.centers
 
-    #plotting section goes here
-    #p1 = plotting()
-    #p1.plot()
+    #charting functionality
+    labels=featuresList
+
+    return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=labels, centers = centers)
+
+    # #p1 = plotting()
+    # #p1.plot()
 
 
     # #create playlists for each kmeans assignment
-    c1 = create(access_token)
-    df = result.X
-    centers = result.centers
-    for i in range(clusters):
-        descript = ""
-        center = centers[i]
-        for j in range(len(featuresList)):
-            entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
-            descript = descript + entry
+    # c1 = create(access_token)
+    # for i in range(clusters):
+    #     descript = ""
+    #     center = centers[i]
+    #     for j in range(len(featuresList)):
+    #         entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
+    #         descript = descript + entry
 
-        response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
-        print(response2)
-        r2 = response2['uri']
-        fields = r2.split(":")
-        plid = fields[2]
+    #     response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+    #     r2 = response2['uri']
+    #     fields = r2.split(":")
+    #     plid = fields[2]
 
-        dfi = df.loc[df['kMeansAssignment'] == i]
-        dfi = dfi['trackId']
-        idList = dfi.values.tolist()
-        uriList=[]
-        for item in idList:
-            uriList.append("spotify:track:{}".format(item))
+    #     dfi = df.loc[df['kMeansAssignment'] == i]
+    #     dfi = dfi['trackId']
+    #     idList = dfi.values.tolist()
+    #     uriList=[]
+    #     for item in idList:
+    #         uriList.append("spotify:track:{}".format(item))
 
-        n = 50
-        for j in range(0, len(uriList), n):  
-            listToSend = uriList[j:j + n]
-            stringList = ",".join(listToSend)
-            response3 = c1.addSongs(plid, stringList)
-            #print(response3)
+    #     n = 50 #spotify playlist addition limit
+    #     for j in range(0, len(uriList), n):  
+    #         listToSend = uriList[j:j + n]
+    #         stringList = ",".join(listToSend)
+    #         response3 = c1.addSongs(plid, stringList)
+    #         #print(response3)
 
-    return("Completed K-Means Analysis for selected playlists, created playlists in Spotify")
-    #LATER - make this where the results will be displayed as a bar chart
+    # return("Completed K-Means Analysis for selected playlists, created playlists in Spotify")
+    # #LATER - make this where the results will be displayed as a bar chart
 
 @app.route("/refresh")
 def refresh():
