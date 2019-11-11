@@ -30,7 +30,7 @@ app.config.from_object(__name__)
 CLIENT_SIDE_URL = "http://127.0.0.1"
 PORT = 8000
 
-@app.route("/",methods=["GET","POST"])
+@app.route("/")
 def index():
     # Auth Step 1: Authorize Spotify User
     u1 = auth()
@@ -76,8 +76,11 @@ def authed():
     #build the link for each playlist
     playlists = []
     for playlist in response:
+        print(playlist)
         pl = (playlist['uri'],playlist['playlistName'])
         playlists.append(pl)
+
+    input("waiting....")
 
     #set up the checkbox classes
     class MultiCheckboxField(SelectMultipleField):
@@ -158,7 +161,7 @@ def analysis():
         descript = ""
         center = centers[i]
         for j in range(len(featuresList)):
-            entry = str(" "+str(featuresList[j])+":"+str(center[j])+" ")
+            entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
             descript = descript + entry
 
         response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)

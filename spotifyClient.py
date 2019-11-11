@@ -249,10 +249,11 @@ class data:
                 for i in range(playlistCount3): #retrieve up to limit worth of playlists
                     currentPlayList = response_data['items'][i]
                     playlistName = currentPlayList['name']
+                    playlistOwner = currentPlayList['owner']['display_name']
                     uri = currentPlayList['uri']
                     playlistName = playlistName.title()
                     playlistName = playlistName.replace(" ", "")
-                    entry = {"uri":uri, "playlistName": playlistName}
+                    entry = {"uri":uri, "playlistName": playlistName, "owner":playlistOwner}
                     userPlaylists.append(entry)
 
         results = collection.insert_many(userPlaylists)
