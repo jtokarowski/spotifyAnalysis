@@ -1,7 +1,9 @@
 # Spotify Analysis
 
 ```
-This program will retrieve user selected spotify playlists and run clustering analysis on all contained songs. The program will create 5 new playlists in the users spotify library according to their cluster assignment.
+This program will retrieve user selected spotify playlists and
+run clustering analysis on all contained songs.
+The program will create 5 new playlists in the users spotify library according to their cluster assignment based on the k-means algorithm in SKlearn. 
 ```
 
 ### Prerequisites
@@ -41,6 +43,12 @@ Launch an instance of the mongo daemon, making sure to set the ulimit to 1028 if
 Change directory to the main folder and run python app.py.
 
 Navigate to localhost:8000 in a browser to start the process.
+
+Sign in to spotify and grant the application permission to read and write to public/private playlists.
+
+Select playlists containing songs you want to analyze, hit the submit button at the bottom of the page.
+
+You will be redirected to a new page with a visualization of the cluster center locations via a radar chart.
 ```
 
 ## Built With
