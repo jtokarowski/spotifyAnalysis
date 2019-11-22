@@ -48,6 +48,9 @@ def callback():
 @app.route("/authed", methods=["GET","POST"])
 def authed():
 
+    #placeholder for discover weekly URI
+    discURI = ""
+
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
@@ -76,11 +79,13 @@ def authed():
     #build the link for each playlist
     playlists = []
     for playlist in response:
-        print(playlist)
+        #if playlist['playlistName'] == 'DiscoverWeekly':
+            # if plalyist['owner'] == 'Spotify':
+            #     discURI = plalyist['uri']
+        
         pl = (playlist['uri'],playlist['playlistName'])
         playlists.append(pl)
 
-    input("waiting....")
 
     #set up the checkbox classes
     class MultiCheckboxField(SelectMultipleField):
