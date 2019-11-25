@@ -9,7 +9,6 @@ from statisticalAnalysis import stats
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
-from plots import plotting
 from flask_wtf import FlaskForm
 from wtforms import widgets, SelectMultipleField
 
@@ -100,9 +99,12 @@ def authed():
     form = SimpleForm()
     if form.validate_on_submit():
         formData = form.playlistSelections.data
-        dataString = ",".join(formData)
-        analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
-        return redirect(analysisPageSelections) 
+        if not formData:
+            return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
+        else:
+            dataString = ",".join(formData)
+            analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
+            return redirect(analysisPageSelections) 
     else:
         print(form.errors)
 
@@ -144,6 +146,7 @@ def analysis():
 
     # take in user selection of playlists
     result = stats(dbName, collection)
+
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     result.kMeans(featuresList, clusters)
 
@@ -157,8 +160,6 @@ def analysis():
     #charting functionality
     labels=featuresList
 
-    
-
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
@@ -169,7 +170,7 @@ def analysis():
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
             descript = descript + entry
 
-        response2 = c1.newPlaylist(userName, str(TODAY+'kmeans'+str(i)),descript)
+        response2 = c1.newPlaylist(userName, str(TODAY+'Cluster'+str(i+1)),descript)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
@@ -186,7 +187,7 @@ def analysis():
             listToSend = uriList[j:j + n]
             stringList = ",".join(listToSend)
             response3 = c1.addSongs(plid, stringList)
-            #print(response3)
+            
     return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=labels, centers = centers)
     
 
