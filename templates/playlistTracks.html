@@ -1,8 +1,0 @@
-{% extends "base.html" %}
-
-{% block content %}
-    <h1>Tracks in playlist: {{ pname }}</h1>
-    {% for item in sorted_array %}
-	<p><a href = {{ item.link }}>{{ item.trackName }}</a></p>
-	{% endfor %}
-{% endblock %}

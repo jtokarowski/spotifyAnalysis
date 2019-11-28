@@ -95,7 +95,7 @@ def authed():
     if form.validate_on_submit():
         formData = form.playlistSelections.data
         if not formData:
-            return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
+            return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
         else:
             dataString = ",".join(formData)
             analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
@@ -103,7 +103,7 @@ def authed():
     else:
         print(form.errors)
 
-    return render_template("index2.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
+    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
 
 @app.route("/analysis", methods=["GET"])
 def analysis():
