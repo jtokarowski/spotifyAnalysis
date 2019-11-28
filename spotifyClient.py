@@ -93,6 +93,7 @@ class auth:
         token_type = "Bearer" #always bearer, don't need to grab this each request
         expires_in = response_data["expires_in"]
         newPage = "{}?access_token={}&refresh_token={}&expires_in={}".format(AUTHED_URL, access_token, refresh_token, expires_in)
+        
         return newPage
 
     def get_refreshToken(self, refresh_token):
@@ -147,8 +148,7 @@ class create:
 
         user_playlist_endpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, plid,uriList)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        #request_body = {"uris":uriList}
-        response = requests.post(user_playlist_endpoint, headers=authorization_header) #, json=request_body)
+        response = requests.post(user_playlist_endpoint, headers=authorization_header)
 
         return response
 
@@ -172,7 +172,7 @@ class data:
         followers = profile_data["followers"]
         images = profile_data["images"]
 
-        #strips username to avoid error if user is from FB, name has a space
+        #strips username to avoid error if user is from FB and name has a space, or other weird char
         userName = str(userName)
         newstr = ""
         for char in userName:
@@ -185,24 +185,8 @@ class data:
             else:
                 newstr += char
 
-        #userName = newstr
-
-        #set up db for user
-        #20191127 need to remove some chars or throws error
-
         dbName = str(TODAY) + str(newstr)
-        db = client[dbName] # Creates db instance per user per date, or reconnects
-
-
-        ######################
-
-        ##NEED TO RELOCATE THIS FUNCTION
-        #remove old collections to start fresh if used before
-        #oldCollections = db.list_collection_names()
-        #iterator = 0
-        #for h in oldCollections:
-        #    db.drop_collection(oldCollections[iterator])
-        #    iterator += 1
+        db = client[dbName] # Creates db instance per user per date, or reconnect
 
 
         response = {
@@ -229,17 +213,10 @@ class data:
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text)
 
+        userPlaylists.extend(self.reformat_playlists(response_data))
+
         playlistCount = response_data['total']
         playlistCount2 = len(response_data['items'])
-
-        for i in range(playlistCount2): #retrieve up to limit worth of playlists
-            currentPlayList = response_data['items'][i]
-            playlistName = currentPlayList['name']
-            uri = currentPlayList['uri']
-            playlistName = playlistName.title()
-            playlistName = playlistName.replace(" ", "")
-            entry = {"uri":uri, "playlistName": playlistName}
-            userPlaylists.append(entry)
 
         if playlistCount > playlistCount2:
             #print('playlist limit exceeded')
@@ -249,22 +226,31 @@ class data:
                 offset += 50
                 new_api_endpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
                 response = requests.get(new_api_endpoint, headers=authorization_header)
-                response_data = json.loads(response.text)
-                playlistCount3 = len(response_data['items'])
+                response_data2 = json.loads(response.text)
+                userPlaylists.extend(self.reformat_playlists(response_data2))
 
-                for i in range(playlistCount3): #retrieve up to limit worth of playlists
-                    currentPlayList = response_data['items'][i]
-                    playlistName = currentPlayList['name']
-                    playlistOwner = currentPlayList['owner']['display_name']
-                    uri = currentPlayList['uri']
-                    playlistName = playlistName.title()
-                    playlistName = playlistName.replace(" ", "")
-                    entry = {"uri":uri, "playlistName": playlistName, "owner":playlistOwner}
-                    userPlaylists.append(entry)
 
         results = collection.insert_many(userPlaylists)
 
         return userPlaylists
+
+    def reformat_playlists(self, data):
+
+        playlists = []
+
+        playlistCount = data['total']
+        playlistCount2 = len(data['items'])
+
+        for i in range(playlistCount2): #retrieve up to limit worth of playlists
+            currentPlayList = data['items'][i]
+            playlistName = currentPlayList['name']
+            uri = currentPlayList['uri']
+            playlistName = playlistName.title()
+            playlistName = playlistName.replace(" ", "")
+            entry = {"uri":uri, "playlistName": playlistName}
+            playlists.append(entry)
+
+        return playlists
 
     def playlistTrackFeatures(self, collectionName):
 

@@ -32,23 +32,24 @@ PORT = 8000
 @app.route("/")
 def index():
     # Auth Step 1: Authorize Spotify User
-    u1 = auth()
-    url = u1.auth_url
-    return redirect(url)
-
+    a = auth()
+    return redirect(a.auth_url)
 
 @app.route("/callback/q")
 def callback():
     # Auth Step 2: Requests refresh and access tokens
-    t1 = auth()
-    newPage = t1.get_accessToken(request.args['code'])
-    return redirect(newPage)
+    a = auth()
+    return redirect(a.get_accessToken(request.args['code']))
 
 @app.route("/authed", methods=["GET","POST"])
 def authed():
 
     #placeholder for discover weekly URI
-    discURI = ""
+    #discURI = ""
+            #if playlist['playlistName'] == 'DiscoverWeekly':
+            # if plalyist['owner'] == 'Spotify':
+            #     discURI = plalyist['uri']
+            
 
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
@@ -56,35 +57,29 @@ def authed():
     token_type = "Bearer" #always bearer, don't need to grab this each request
     expires_in = request.args["expires_in"]
 
-    r1=auth()
+    a = auth()
+    d = data(access_token)
 
-    p1 = data(access_token)
-    p2 = p1.profile()
-    userName = p2.get("userName")
-    image = p2.get("images")
+    prof = d.profile()
+    db = prof.get("dbName")
+    userName = prof.get("userName")
+    image = prof.get("images")
+
     if len(image) == 0:
         imgurl = 'N/A'
     else:
         imgurl = image[0]['url']
         
-    db = p2.get("dbName")
 
-    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
-    analysisPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.analysisURL(), refresh_token, access_token, expires_in)
-
-    response = p1.userPlaylists()
+    refreshPage = "{}?refresh_token={}&access_token={}".format(a.refreshURL(), refresh_token, access_token)
+    analysisPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(a.analysisURL(), refresh_token, access_token, expires_in)
 
     #build the link for each playlist
+    response = d.userPlaylists()
     playlists = []
     for playlist in response:
-        #if playlist['playlistName'] == 'DiscoverWeekly':
-            # if plalyist['owner'] == 'Spotify':
-            #     discURI = plalyist['uri']
-        
         pl = (playlist['uri'],playlist['playlistName'])
         playlists.append(pl)
-
 
     #set up the checkbox classes
     class MultiCheckboxField(SelectMultipleField):
@@ -115,31 +110,30 @@ def analysis():
 
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
-    token_type = "Bearer" #always bearer, don't need to grab this each request
+    token_type = "Bearer"
     expires_in = request.args["expires_in"]
     pldata = request.args["data"]
 
     unpackedData = pldata.split(",")
 
-    p1 = data(access_token)
-    p2 = p1.profile()
-    dbName = p2.get("dbName")
-    userName = p2.get("userName")
+    d = data(access_token)
+    prof = d.profile()
+    dbName = prof.get("dbName")
+    userName = prof.get("userName")
 
     db = client[dbName]
-    collection='MASTER'
+    collection = 'MASTER'
     mongoCollection = db[collection]
 
     #retrieve songs and analysis for user selected playlists, store in DB
     masterSongList=[]
     for i in range(len(unpackedData)):
-        result = p1.getPlaylistTracks(unpackedData[i])
-        for i in range(len(result)):
-            masterSongList.append(result[i])
+        result = d.getPlaylistTracks(unpackedData[i])
+        masterSongList.extend(result)
 
     results = mongoCollection.insert_many(masterSongList) #includes song id, artist info
 
-    p1.playlistTrackFeatures(collection)
+    d.playlistTrackFeatures(collection)
 
     #offer user choice of how many clusters
     clusters = 5
@@ -150,16 +144,8 @@ def analysis():
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     result.kMeans(featuresList, clusters)
 
-    # add option for user to decide if they want to create spotify playlists
-    # offer user cluster analysis (bar chart with each avg attribute)
-
-    #print(result.X.head())
     df = result.X
     centers = result.centers
-
-    #charting functionality
-    labels=featuresList
-
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
@@ -188,8 +174,7 @@ def analysis():
             stringList = ",".join(listToSend)
             response3 = c1.addSongs(plid, stringList)
             
-    return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=labels, centers = centers)
-    
+    return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=featuresList, centers=centers)
 
 @app.route("/refresh")
 def refresh():
@@ -207,98 +192,6 @@ def refresh():
     playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
 
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
-    
-
-@app.route("/playlists")
-def playlists():
-
-    #grab the tokens from the URL
-    access_token = request.args.get("access_token")
-    refresh_token = request.args.get("refresh_token")
-    token_type = "Bearer" #always bearer, don't need to grab this each request
-    expires_in = request.args["expires_in"]
-
-
-    r1 = auth()
-    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
-
-    p1 = data(access_token)
-    p1.profile #create class instance that grabs userName
-    response = p1.userPlaylists()
-
-    #build the link for each playlist
-    array = []
-    for playlist in response:
-        item = {}
-        item['playlistName'] = playlist['playlistName']
-        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&title={}".format(r1.playlistTracksURL(), refresh_token, access_token, expires_in, playlist['uri'], playlist['playlistName'])
-        array.append(item)
-    
-
-    return render_template("playlists.html", title='Playlists', token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
-
-@app.route("/playlistTracks")
-def playlistTracks():
-
-    #show the averages, ranges here to examine what the characteristics of a playlist are
-
-    #grab the tokens from the URL
-    access_token = request.args.get("access_token")
-    refresh_token = request.args.get("refresh_token")
-    token_type = "Bearer" #always bearer, don't need to grab this each request
-    expires_in = request.args["expires_in"]
-    uri = request.args.get("uri")
-    name = request.args.get('title')
-
-    r1 = auth()
-    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
-    p1 = data(access_token)
-
-    response = p1.getPlaylistTracks(uri)
-
-    #build the link for each song
-    array = []
-    for song in response:
-        item = {}
-        item['trackName'] = song['trackName']
-        item['link'] = "{}?refresh_token={}&access_token={}&expires_in={}&uri={}&trackName={}".format(r1.playlistTrackFeaturesURL(), refresh_token, access_token, expires_in, song['trackId'], song['trackName'])
-        array.append(item)
-
-    return render_template("playlistTracks.html", title='PlaylistTracks', pname=name, token=access_token, refresh=refresh_token, link=refreshPage, sorted_array=array)
-
-@app.route("/playlistTrackFeatures")
-def playlistTrackFeatures():
-
-    access_token = request.args.get("access_token")
-    refresh_token = request.args.get("refresh_token")
-    token_type = "Bearer" #always bearer, don't need to grab this each request
-    expires_in = request.args["expires_in"]
-
-    trackName = request.args.get("trackName")
-    
-    uri = []
-    uri.append(request.args.get("uri"))
-    
-    r1 = auth()
-    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
-    
-    p1 = data(access_token)
-    array = []
-    trackAudioFeatures = p1.getTrackFeatures(uri)
-
-
-    unpacked = trackAudioFeatures['audio_features'] #remove outer layer of dict
-    for item in unpacked:
-        array.append(item)
-
-
-    #convert this to plot a graph of the audio features
-
-    return render_template("playlistTrackFeatures.html", title='PlaylistTrackFeatures', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, sorted_array=array, tname=trackName)
-
     
 if __name__ == "__main__":
     app.run(debug=True, port=PORT)
