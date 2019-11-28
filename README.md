@@ -1,9 +1,11 @@
 # Spotify Analysis
 
 ```
-This program will retrieve user selected spotify playlists and
-run clustering analysis on all contained songs.
-The program will create 5 new playlists in the users spotify library according to their cluster assignment based on the k-means algorithm in SKlearn. 
+This program will retrieve user selected spotify playlists
+and run clustering analysis on all contained songs.
+The program will create 5 new playlists in the users
+Spotify library according to their cluster assignment
+based on the k-means algorithm in SKlearn. 
 ```
 
 ### Prerequisites
