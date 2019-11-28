@@ -237,7 +237,6 @@ class data:
     def reformat_playlists(self, data):
 
         playlists = []
-
         playlistCount = data['total']
         playlistCount2 = len(data['items'])
 
@@ -278,9 +277,7 @@ class data:
         for i in range(0, len(uriList), n):  
             listToSend = uriList[i:i + n]
             response = d1.getTrackFeatures(listToSend)
-            extractedFeaturesList = response['audio_features']
-            for item in extractedFeaturesList:
-                allFeaturesList.append(item)
+            allFeaturesList.extend(response['audio_features'])    
 
         for k in range(len(songList)):
             currentSong = songList[k]
@@ -293,8 +290,7 @@ class data:
         return "done getting features for songs in " + str(collection)
 
     def getTrackFeatures(self, uri):
-
-        #get audio features for 1 or more tracks (max of 100)
+    #get audio features for 1 or more tracks (max of 100)
 
         if uri == None:
             return
@@ -316,20 +312,15 @@ class data:
         return response_data
 
     def getPlaylistTracks(self, uri):
-        #get tracks for 1 playlist, insert into DB
+        #get tracks for 1 playlist
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        #db setup
-        db = client[dbName]
-
-        #set blank list for all songs in playlist
-        songDataClean = []
 
         uri = uri
         fields = uri.split(':')
         plid = fields[2]
 
-        playlistCollection = db[plid] #name collection by playlistUri
+        #set blank list for all songs in playlist
+        songDataClean = []
 
         #get songs in playlist from API
         api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)
@@ -340,70 +331,50 @@ class data:
         data = response_data['items'] #this is a list of dicts        
     
         for i in range(len(data)):
-            songInfo = {} 
-
-            trackId = data[i]['track']['id']
-            name = data[i]['track']['name']
-            name = name.title()
-            trackName = name.replace(" ", "")
-
-            songInfo['trackName'] = trackName
-            songInfo['trackId'] = trackId
-
-            artistList = data[i]['track']['artists']
-            artistNameList = []
-            artistIdList = []
-            for i in range(len(artistList)):
-                artistName = artistList[i]['name']
-                artistNameList.append(artistName)
-                artistId = artistList[i]['id']
-                artistIdList.append(artistId)
-
-            songInfo['artistNames'] = artistNameList
-            songInfo['artistIds'] = artistIdList
-
-            songDataClean.append(songInfo)
+            songDataClean.append(self.cleanSongData(data[i]))
 
         #catch the api limit error
         songCount = response_data['total']
         songCount2 = len(response_data['items'])
-
         offset = 0
-        #testing to see if we retrieved all songs
+
         if songCount > songCount2:
-            #print('track limit exceeded')
             runs = int(round(songCount/100)-1)
-            for m in range (runs):
+            for j in range (runs):
                 offset += 100
                 api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, plid, offset)
                 response = requests.get(api_endpoint, headers=authorization_header)
                 response_data = json.loads(response.text)
-                data = response_data['items']       
+                data = response_data['items']     
 
-                for i in range(len(data)):
-                    songInfo = {} 
-
-                    trackId = data[i]['track']['id']
-                    name = data[i]['track']['name']
-                    name = name.title()
-                    trackName = name.replace(" ", "")
-
-                    songInfo['trackName'] = trackName
-                    songInfo['trackId'] = trackId
-
-                    artistList = data[i]['track']['artists']
-                    artistNameList = []
-                    artistIdList = []
-                    for i in range(len(artistList)):
-                        artistName = artistList[i]['name']
-                        artistNameList.append(artistName)
-                        artistId = artistList[i]['id']
-                        artistIdList.append(artistId)
-
-                    songInfo['artistNames'] = artistNameList
-                    songInfo['artistIds'] = artistIdList
-
-                    songDataClean.append(songInfo)
+                for k in range(len(data)):
+                    songDataClean.append(self.cleanSongData(data[k]))  
             
         return songDataClean
+
+    def cleanSongData(self, song):
+    #reformats song information to drop unecessary data
+
+        songInfo = {} 
+
+        trackId = song['track']['id']
+        name = song['track']['name']
+        name = name.title()
+        trackName = name.replace(" ", "")
+
+        songInfo['trackName'] = trackName
+        songInfo['trackId'] = trackId
+
+        artistList = song['track']['artists']
+        artistNameList = []
+        artistIdList = []
+        for i in range(len(artistList)):
+            artistName = artistList[i]['name']
+            artistNameList.append(artistName)
+            artistId = artistList[i]['id']
+            artistIdList.append(artistId)
+        songInfo['artistNames'] = artistNameList
+        songInfo['artistIds'] = artistIdList
+        
+        return songInfo
 

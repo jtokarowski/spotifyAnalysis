@@ -49,7 +49,7 @@ def authed():
             #if playlist['playlistName'] == 'DiscoverWeekly':
             # if plalyist['owner'] == 'Spotify':
             #     discURI = plalyist['uri']
-            
+
 
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
@@ -128,24 +128,21 @@ def analysis():
     #retrieve songs and analysis for user selected playlists, store in DB
     masterSongList=[]
     for i in range(len(unpackedData)):
-        result = d.getPlaylistTracks(unpackedData[i])
-        masterSongList.extend(result)
+        songs = d.getPlaylistTracks(unpackedData[i])
+        masterSongList.extend(songs)
 
-    results = mongoCollection.insert_many(masterSongList) #includes song id, artist info
+    mongoResult = mongoCollection.insert_many(masterSongList) #includes song id, artist info
 
     d.playlistTrackFeatures(collection)
 
-    #offer user choice of how many clusters
+    #set up kmeans
     clusters = 5
-
-    # take in user selection of playlists
-    result = stats(dbName, collection)
-
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
-    result.kMeans(featuresList, clusters)
+    statistics = stats(dbName, collection)
+    statistics.kMeans(featuresList, clusters)
 
-    df = result.X
-    centers = result.centers
+    df = statistics.df
+    centers = statistics.centers
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
