@@ -178,13 +178,19 @@ class data:
         for char in userName:
             if char == ' ':
                 continue
+            elif char == '.':
+                continue
+            elif char == ',':
+                continue
             else:
                 newstr += char
 
-        userName = newstr
+        #userName = newstr
 
         #set up db for user
-        dbName = str(TODAY) + str(userName)
+        #20191127 need to remove some chars or throws error
+
+        dbName = str(TODAY) + str(newstr)
         db = client[dbName] # Creates db instance per user per date, or reconnects
 
 
