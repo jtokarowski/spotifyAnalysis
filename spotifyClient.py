@@ -186,8 +186,6 @@ class data:
                 newstr += char
 
         dbName = str(TODAY) + str(newstr)
-        db = client[dbName] # Creates db instance per user per date, or reconnect
-
 
         response = {
         "userName": userName,
@@ -199,10 +197,10 @@ class data:
         return response
 
     def userPlaylists(self):
-        #connect to db
+        #connect to db, reset if it was there previously
         db = client[dbName]
-        collection = db['userPlaylists']
-        db.drop_collection(db['userPlaylists']) #makes sure we don't dupe playlists
+        client.drop_database(dbName)
+        db = client[dbName]
         collection = db['userPlaylists']
 
         userPlaylists = []
