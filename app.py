@@ -190,4 +190,4 @@ def refresh():
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 if __name__ == "__main__":
-    app.run(debug=True, port=PORT)
+    app.run(debug=False, port=PORT)
