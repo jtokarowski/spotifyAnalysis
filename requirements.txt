@@ -9,7 +9,6 @@ itsdangerous==1.1.0
 Jinja2==2.10.3
 kiwisolver==1.1.0
 MarkupSafe==1.1.1
-matplotlib==2.2.4
 numpy==1.16.5
 pandas==0.19.2
 pymongo==3.9.0

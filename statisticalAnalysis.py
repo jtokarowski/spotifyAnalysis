@@ -56,9 +56,10 @@ class stats:
         df = pd.read_json(json.dumps(songs) , orient='records')
         
         #remove dupes in playlists
-        dropRows = df.duplicated(['trackId','collection'])
-        df.drop(dropRows,inplace=True)
-
+        #dropRows = df.duplicated(['trackId','collection'])
+        #if True in dropRows:
+        #    df.drop(dropRows,inplace=True)
+        
         #combine rows where track is in multiple playlists
         df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
     
