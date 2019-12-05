@@ -20,10 +20,8 @@ urllib.parse
 pymongo
 pandas
 numpy
-matplotlib.pyplot
 flask_wtf
 wtforms
-seaborn
 sklearn 
 ```
 
