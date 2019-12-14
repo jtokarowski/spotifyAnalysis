@@ -16,6 +16,8 @@ SECRET_KEY = 'development'
 #grab date program is being run
 td = date.today()
 TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
+YEAR = td.strftime("%Y") ##YYYY
+NICEDATE = td.strftime("%b %d %Y") 
 
 #set up db instance 
 client = MongoClient('localhost', 27017)
@@ -150,9 +152,12 @@ def analysis():
         center = centers[i]
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
-            descript = descript + entry
+            descript += entry
 
-        response2 = c1.newPlaylist(userName, str(TODAY+'Cluster'+str(i+1)),descript)
+        descript +=" created on {}".format(NICEDATE)
+        descript+=" copyright JTokarowski {}".format(YEAR)
+
+        response2 = c1.newPlaylist(userName, str('Cluster'+str(i+1)),descript)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
