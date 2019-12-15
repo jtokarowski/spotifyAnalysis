@@ -262,7 +262,14 @@ class data:
         
         for document in cursor: #within playlist
             newDoc = document
+            newDoc['genres'] = []
             newDoc['collection'] = collection
+            if len(newDoc["artistIds"])>1:
+                for artistid in newDoc["artistIds"]:
+                    newDoc['genres'].extend(self.getArtistGenres(artistid)) 
+            else:
+                newDoc['genres'].extend(self.getArtistGenres(newDoc["artistIds"][0]))
+
             songList.append(newDoc)
             if document['trackId'] == None:
                 uriList.append('None')
@@ -376,3 +383,25 @@ class data:
         
         return songInfo
 
+    def getGenreSeeds(self):
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        api_endpoint = "{}/recommendations/available-genre-seeds".format(SPOTIFY_API_URL)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text)     
+
+        return response_data
+
+    def getArtistGenres(self, artistid):
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistid)
+
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text) 
+
+        genres = response_data['artists'][0]['genres'] 
+
+        return genres

@@ -21,12 +21,15 @@ class stats:
         #blank list for unpacked songs
         songs = []
         for document in cursor:
+
             doc = document['audioFeatures']
             if doc==None:
                 continue
 
             an = document['artistNames']
             ai = document['artistIds']
+
+            #d = {x:genres.count(x) for x in genres}
 
             if len(an)==1:
                 document['artistNames'] = an[0]
@@ -61,7 +64,7 @@ class stats:
         #    df.drop(dropRows,inplace=True)
         
         #combine rows where track is in multiple playlists
-        df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
+        #df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
     
         self.df = df
 

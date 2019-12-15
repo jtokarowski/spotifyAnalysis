@@ -113,6 +113,8 @@ def analysis():
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer"
     expires_in = request.args["expires_in"]
+
+    #raw data from the checklist (a list of playlist URIs specifically)
     pldata = request.args["data"]
 
     unpackedData = pldata.split(",")
@@ -123,6 +125,7 @@ def analysis():
     userName = prof.get("userName")
 
     db = client[dbName]
+
     collection = 'MASTER'
     mongoCollection = db[collection]
 
@@ -136,14 +139,19 @@ def analysis():
 
     d.playlistTrackFeatures(collection)
 
-    #set up kmeans
-    clusters = 5
+    #set up kmeans, check how many songs
+    if len(masterSongList)<5:
+        clusters = len(masterSongList)
+    else:
+        clusters = 5
+
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     statistics = stats(dbName, collection)
     statistics.kMeans(featuresList, clusters)
 
     df = statistics.df
     centers = statistics.centers
+
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
@@ -157,23 +165,39 @@ def analysis():
         descript +=" created on {}".format(NICEDATE)
         descript+=" copyright JTokarowski {}".format(YEAR)
 
+        #genre assignment goes here
+        dfi = df.loc[df['kMeansAssignment'] == i]
+
+        g = dfi['genres']
+        genreslist = g.values.tolist()
+        gs = []
+        for genre in genreslist:
+            gs.extend(genre)
+
+        #[(g[0], len(list(g[1]))) for g in itertools.groupby(gs)]
+
+        #print(g)
+        #input()
+        
+
         response2 = c1.newPlaylist(userName, str('Cluster'+str(i+1)),descript)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
 
-        dfi = df.loc[df['kMeansAssignment'] == i]
+
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
         uriList=[]
         for item in idList:
             uriList.append("spotify:track:{}".format(item))
 
-        n = 50 #spotify playlist addition limit
-        for j in range(0, len(uriList), n):  
-            listToSend = uriList[j:j + n]
-            stringList = ",".join(listToSend)
-            response3 = c1.addSongs(plid, stringList)
+        if len(uriList)>0:
+            n = 50 #spotify playlist addition limit
+            for j in range(0, len(uriList), n):  
+                listToSend = uriList[j:j + n]
+                stringList = ",".join(listToSend)
+                response3 = c1.addSongs(plid, stringList)
             
     return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=featuresList, centers=centers)
 
