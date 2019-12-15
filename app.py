@@ -170,7 +170,7 @@ def analysis():
             descript += entry
 
         descript +=" created on {}".format(NICEDATE)
-        descript+=" copyright JTokarowski {}".format(YEAR)
+        descript+=" by JTokarowski "
 
         dfi = df.loc[df['kMeansAssignment'] == i]
 
