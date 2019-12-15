@@ -10,6 +10,9 @@ import pandas as pd
 import numpy as np
 from flask_wtf import FlaskForm
 from wtforms import widgets, SelectMultipleField
+import itertools
+from collections import Counter
+
 
 SECRET_KEY = 'development'
 
@@ -155,6 +158,10 @@ def analysis():
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
+
+    mostcommons = []
+    z = 1
+
     for i in range(clusters):
         descript = ""
         center = centers[i]
@@ -165,7 +172,6 @@ def analysis():
         descript +=" created on {}".format(NICEDATE)
         descript+=" copyright JTokarowski {}".format(YEAR)
 
-        #genre assignment goes here
         dfi = df.loc[df['kMeansAssignment'] == i]
 
         g = dfi['genres']
@@ -174,13 +180,17 @@ def analysis():
         for genre in genreslist:
             gs.extend(genre)
 
-        #[(g[0], len(list(g[1]))) for g in itertools.groupby(gs)]
+        most_common,num_most_common = Counter(gs).most_common(1)[0] # 4, 6 times
 
-        #print(g)
-        #input()
+        if most_common in mostcommons:
+            z+=1
+            most_common = most_common+" "+str(z)
+            
+        else:
+            mostcommons.append(most_common)
         
 
-        response2 = c1.newPlaylist(userName, str('Cluster'+str(i+1)),descript)
+        response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
