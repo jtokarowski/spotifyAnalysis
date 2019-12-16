@@ -20,7 +20,7 @@ SECRET_KEY = 'development'
 td = date.today()
 TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
 YEAR = td.strftime("%Y") ##YYYY
-NICEDATE = td.strftime("%b %d %Y") 
+NICEDATE = td.strftime("%b %d %Y") ##MMM DD YYYY
 
 #set up db instance 
 client = MongoClient('localhost', 27017)
@@ -229,4 +229,4 @@ def refresh():
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 if __name__ == "__main__":
-    app.run(debug=False, port=PORT)
+    app.run(debug=True, port=PORT)

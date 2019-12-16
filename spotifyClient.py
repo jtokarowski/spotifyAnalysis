@@ -255,6 +255,7 @@ class data:
         db = client[dbName]
         songList = [] #new tracklist for each playlist
         uriList = [] #list for URIs to send to retrieval
+        artistIdList = [] #list of artist ids to send for genre
         collection = collectionName
 
         cursor = db[collection].find({})
@@ -262,21 +263,33 @@ class data:
         
         for document in cursor: #within playlist
             newDoc = document
-            newDoc['genres'] = []
             newDoc['collection'] = collection
-            if len(newDoc["artistIds"])>1:
-                for artistid in newDoc["artistIds"]:
-                    newDoc['genres'].extend(self.getArtistGenres(artistid)) 
-            else:
-                newDoc['genres'].extend(self.getArtistGenres(newDoc["artistIds"][0]))
 
             songList.append(newDoc)
             if document['trackId'] == None:
                 uriList.append('None')
             else:
                 uriList.append(document['trackId'])
+                artistIdList.extend(document['artistIds'])
 
-        # looping till length of list
+        set_artistids = set(artistIdList)
+        unique_artistids = list(set_artistids)
+
+        #break up by spotify artist id limit
+        allGenresList = []
+        m = 50
+        for j in range(0, len(unique_artistids), m):  
+            listToSend = unique_artistids[j:j + m]
+            response = d1.getArtistGenres(listToSend)
+            allGenresList.extend(response)
+
+        #form dict from resulting lists
+        genremap = {}
+
+        for l in range(len(unique_artistids)):
+            genremap[unique_artistids[l]] = allGenresList[l]
+
+        # breaking up song ids by spotify limit
         allFeaturesList = []
         n = 100
         for i in range(0, len(uriList), n):  
@@ -287,6 +300,13 @@ class data:
         for k in range(len(songList)):
             currentSong = songList[k]
             currentSong['audioFeatures'] = allFeaturesList[k]
+            if len(currentSong['artistIds'])>1:
+                currentSong['genres'] = []
+                for z in range(len(currentSong['artistIds'])):
+                    g = genremap[currentSong['artistIds'][z]]
+                    currentSong['genres'].extend(g)
+            else:
+                currentSong['genres'] = genremap[currentSong['artistIds'][0]]
 
         db.drop_collection(collection) #remove old collection
         collection = db[collection] #reset the collection
@@ -333,8 +353,9 @@ class data:
 
         #unpack response
         response_data = json.loads(response.text)
-        data = response_data['items'] #this is a list of dicts        
-    
+        data = response_data['items'] #this is a list of dicts  
+
+        ###improve efficiency here      
         for i in range(len(data)):
             songDataClean.append(self.cleanSongData(data[i]))
 
@@ -393,15 +414,25 @@ class data:
 
         return response_data
 
-    def getArtistGenres(self, artistid):
+    def getArtistGenres(self, artistids):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistid)
+        if isinstance(artistids, list):
+            if len(artistids)>1:
+                genres = []
+                #turn the list into comma separated string
+                commaSep_artistids = ",".join(artistids)
+                api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, commaSep_artistids)
+                response = requests.get(api_endpoint, headers=authorization_header)
+                response_data = json.loads(response.text) 
+                for i in range(len(artistids)):
+                    genres.append(response_data['artists'][i]['genres'])
+            
+                return genres
 
+        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids)
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text) 
-
         genres = response_data['artists'][0]['genres'] 
-
         return genres
