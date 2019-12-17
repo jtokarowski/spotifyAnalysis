@@ -38,7 +38,6 @@ Clone this repository, and create a file 'config.json' in the main application f
     }
 }
 
-Launch an instance of the mongo daemon, making sure to set the ulimit to 1028 if applicable. 
 
 Change directory to the main folder and run python app.py.
 
@@ -49,15 +48,17 @@ Sign in to spotify and grant the application permission to read and write to pub
 Select playlists containing songs you want to analyze, hit the submit button at the bottom of the page.
 
 You will be redirected to a new page with a visualization of the cluster center locations via a radar chart.
+
+The 5 new playlists will be created automatically in your spotify account, named by the most prevalent genre in the included songs. Additional information about each playlist can be found in the comments field.
 ```
 
 ## Built With
 ```
-* [Flask](http://flask.palletsprojects.com/en/1.1.x/) - The web framework used
+ [Flask](http://flask.palletsprojects.com/en/1.1.x/) - The web framework used
 ```
 ## Authors
 ```
-* **John Tokarowski** 
+John Tokarowski
 ```
 ## Acknowledgments
 ```
