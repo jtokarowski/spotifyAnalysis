@@ -3,7 +3,6 @@ import sys
 import requests
 import json
 import time
-from urllib.parse import quote
 from datetime import date
 
 #import dev keys
@@ -51,7 +50,7 @@ auth_query_parameters = {
 class auth:
     def __init__ (self):
     	#step 1: Spotify User OK's application access
-        url_args = "&".join(["{}={}".format(key, quote(val)) for key, val in auth_query_parameters.items()])
+        url_args = "&".join(["{}={}".format(key, val) for key, val in auth_query_parameters.items()])
         auth_url = "{}/?{}".format(SPOTIFY_AUTH_URL, url_args)
         self.auth_url = auth_url
 
