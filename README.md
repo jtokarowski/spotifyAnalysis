@@ -18,7 +18,6 @@ flask
 requests
 urllib.parse
 pandas
-numpy
 flask_wtf
 wtforms
 sklearn 

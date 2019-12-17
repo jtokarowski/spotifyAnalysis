@@ -6,7 +6,6 @@ from datetime import date
 from spotifyClient import data, auth, create
 from statisticalAnalysis import stats
 import pandas as pd
-import numpy as np
 from flask_wtf import FlaskForm
 from wtforms import widgets, SelectMultipleField
 import itertools
