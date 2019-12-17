@@ -17,7 +17,6 @@ json
 flask
 requests
 urllib.parse
-pymongo
 pandas
 numpy
 flask_wtf
