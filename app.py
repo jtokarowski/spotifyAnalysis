@@ -2,7 +2,6 @@ import json
 from flask import Flask, Markup, request, redirect, render_template, jsonify
 import requests
 from urllib.parse import quote
-from pymongo import MongoClient
 from datetime import date
 from spotifyClient import data, auth, create
 from statisticalAnalysis import stats

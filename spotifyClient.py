@@ -4,7 +4,6 @@ import requests
 import json
 import time
 from urllib.parse import quote
-from pymongo import MongoClient
 from datetime import date
 
 #import dev keys
