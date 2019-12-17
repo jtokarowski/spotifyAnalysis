@@ -39,9 +39,6 @@ STATE = "" #Should create a random string generator here to make a new state for
 td = date.today()
 TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
 
-#set up db instance
-client = MongoClient('localhost', 27017)
-
 #construct auth request params
 auth_query_parameters = {
     "response_type": "code",
@@ -159,7 +156,6 @@ class data:
     def profile(self):
         
         global userName
-        global dbName
 
         user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
@@ -185,23 +181,15 @@ class data:
             else:
                 newstr += char
 
-        dbName = str(TODAY) + str(newstr)
-
         response = {
         "userName": userName,
         "images": images,
-        "followers": followers,
-        "dbName": dbName
+        "followers": followers
         }
 
         return response
 
     def userPlaylists(self):
-        #connect to db, reset if it was there previously
-        #db = client[dbName]
-        #client.drop_database(dbName)
-        #db = client[dbName]
-        #collection = db['userPlaylists']
 
         userPlaylists = []
         
@@ -303,9 +291,6 @@ class data:
             else:
                 currentSong['genres'] = genremap[currentSong['artistIds'][0]]
 
-        #db.drop_collection(collection) #remove old collection
-        #collection = db[collection] #reset the collection
-        #results = collection.insert_many(songList)
         return songList
         #return "done getting features for songs in " + str(collection)
 

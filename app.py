@@ -22,9 +22,6 @@ TODAY = td.strftime("%Y%m%d") ##YYYYMMDD
 YEAR = td.strftime("%Y") ##YYYY
 NICEDATE = td.strftime("%b %d %Y") ##MMM DD YYYY
 
-#set up db instance 
-client = MongoClient('localhost', 27017)
-
 #creates instance of app
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -65,7 +62,6 @@ def authed():
     d = data(access_token)
 
     prof = d.profile()
-    db = prof.get("dbName")
     userName = prof.get("userName")
     image = prof.get("images")
 
@@ -124,21 +120,13 @@ def analysis():
 
     d = data(access_token)
     prof = d.profile()
-    dbName = prof.get("dbName")
     userName = prof.get("userName")
 
-    db = client[dbName]
-
-    collection = 'MASTER'
-    mongoCollection = db[collection]
-
-    #retrieve songs and analysis for user selected playlists, store in DB
+    #retrieve songs and analysis for user selected playlistsDB
     masterSongList=[]
     for i in range(len(unpackedData)):
         songs = d.getPlaylistTracks(unpackedData[i])
         masterSongList.extend(songs)
-
-    #mongoResult = mongoCollection.insert_many(masterSongList) #includes song id, artist info
 
     finalsongs = d.trackFeatures(masterSongList)
 
