@@ -138,9 +138,9 @@ def analysis():
         songs = d.getPlaylistTracks(unpackedData[i])
         masterSongList.extend(songs)
 
-    mongoResult = mongoCollection.insert_many(masterSongList) #includes song id, artist info
+    #mongoResult = mongoCollection.insert_many(masterSongList) #includes song id, artist info
 
-    d.playlistTrackFeatures(collection)
+    finalsongs = d.trackFeatures(masterSongList)
 
     #set up kmeans, check how many songs
     if len(masterSongList)<5:
@@ -149,7 +149,7 @@ def analysis():
         clusters = 5
 
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
-    statistics = stats(dbName, collection)
+    statistics = stats(finalsongs)
     statistics.kMeans(featuresList, clusters)
 
     df = statistics.df
@@ -158,9 +158,7 @@ def analysis():
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
-
-    mostcommons = []
-    z = 1
+    repeatgenres = {}
 
     for i in range(clusters):
         descript = ""
@@ -180,14 +178,13 @@ def analysis():
         for genre in genreslist:
             gs.extend(genre)
 
-        most_common,num_most_common = Counter(gs).most_common(1)[0] # 4, 6 times
+        most_common,num_most_common = Counter(gs).most_common(1)[0] 
 
-        if most_common in mostcommons:
-            z+=1
-            most_common = most_common+" "+str(z)
+        if most_common in repeatgenres.keys():
+            most_common += " "+str(repeatgenres[most_common]+1)
             
         else:
-            mostcommons.append(most_common)
+            repeatgenres[most_common]=1
         
 
         response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
@@ -229,4 +226,4 @@ def refresh():
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 if __name__ == "__main__":
-    app.run(debug=True, port=PORT)
+    app.run(debug=False, port=PORT)

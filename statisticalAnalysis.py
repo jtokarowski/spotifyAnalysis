@@ -10,62 +10,44 @@ from sklearn.metrics import confusion_matrix
 
 class stats:
 
-    def __init__(self, dbName, collection):
-        #unpacks database collection into dataframe
+    def __init__(self, songs):
+        
+        songsfinal = []
+        for song in songs:
 
-        #set up mongo client
-        client = MongoClient('localhost', 27017)
-        db = client[dbName] 
-        dbCollection = db[collection]
-        cursor = dbCollection.find({})  #temp DB that has all songs in it
-        #blank list for unpacked songs
-        songs = []
-        for document in cursor:
-
-            doc = document['audioFeatures']
+            doc = song['audioFeatures']
             if doc==None:
                 continue
 
-            an = document['artistNames']
-            ai = document['artistIds']
-
-            #d = {x:genres.count(x) for x in genres}
+            an = song['artistNames']
+            ai = song['artistIds']
 
             if len(an)==1:
-                document['artistNames'] = an[0]
+                song['artistNames'] = an[0]
             else:
                 strList = ",".join(an)
-                document['artistNames'] = strList
+                song['artistNames'] = strList
 
             if len(ai)==1:
-                document['artistIds'] = ai[0]
+                song['artistIds'] = ai[0]
             else:
                 strList = ",".join(ai)
-                document['artistIds'] = strList
+                song['artistIds'] = strList
 
             for key,val in doc.items():
-                document[str(key)] = val
+                song[str(key)] = val
 
-            del document['audioFeatures']
-            del document['type']
-            del document['id']
-            del document['track_href']
-            del document['_id']
-            del document['analysis_url']
+            del song['audioFeatures']
+            del song['type']
+            del song['id']
+            del song['track_href']
+            del song['analysis_url']
     
-            songs.append(document)
+            songsfinal.append(song)
         
         #convert songs to dataFrame
-        df = pd.read_json(json.dumps(songs) , orient='records')
-        
-        #remove dupes in playlists
-        #dropRows = df.duplicated(['trackId','collection'])
-        #if True in dropRows:
-        #    df.drop(dropRows,inplace=True)
-        
-        #combine rows where track is in multiple playlists
-        #df = df.groupby(['trackId','acousticness','artistIds','danceability','energy','instrumentalness','key','liveness','loudness','speechiness','tempo','time_signature','valence'])['collection'].apply(','.join).reset_index()
-    
+        df = pd.read_json(json.dumps(songsfinal) , orient='records')
+ 
         self.df = df
 
     def logReg(self):

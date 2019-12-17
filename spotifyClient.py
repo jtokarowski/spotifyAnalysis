@@ -198,10 +198,10 @@ class data:
 
     def userPlaylists(self):
         #connect to db, reset if it was there previously
-        db = client[dbName]
-        client.drop_database(dbName)
-        db = client[dbName]
-        collection = db['userPlaylists']
+        #db = client[dbName]
+        #client.drop_database(dbName)
+        #db = client[dbName]
+        #collection = db['userPlaylists']
 
         userPlaylists = []
         
@@ -228,7 +228,7 @@ class data:
                 userPlaylists.extend(self.reformat_playlists(response_data2))
 
 
-        results = collection.insert_many(userPlaylists)
+        #results = collection.insert_many(userPlaylists)
 
         return userPlaylists
 
@@ -249,28 +249,23 @@ class data:
 
         return playlists
 
-    def playlistTrackFeatures(self, collectionName):
+    def trackFeatures(self, songs):
 
         d1 = data(self.access_token)
-        db = client[dbName]
         songList = [] #new tracklist for each playlist
         uriList = [] #list for URIs to send to retrieval
         artistIdList = [] #list of artist ids to send for genre
-        collection = collectionName
-
-        cursor = db[collection].find({})
-        trackCount = cursor.count()
         
-        for document in cursor: #within playlist
-            newDoc = document
-            newDoc['collection'] = collection
+        for song in songs: #within playlist
 
-            songList.append(newDoc)
-            if document['trackId'] == None:
+            #newDoc['collection'] = collection  
+            ##relocate this to playlist song retrieval######
+            songList.append(song)
+            if song['trackId'] == None:
                 uriList.append('None')
             else:
-                uriList.append(document['trackId'])
-                artistIdList.extend(document['artistIds'])
+                uriList.append(song['trackId'])
+                artistIdList.extend(song['artistIds'])
 
         set_artistids = set(artistIdList)
         unique_artistids = list(set_artistids)
@@ -308,11 +303,11 @@ class data:
             else:
                 currentSong['genres'] = genremap[currentSong['artistIds'][0]]
 
-        db.drop_collection(collection) #remove old collection
-        collection = db[collection] #reset the collection
-        results = collection.insert_many(songList)
-
-        return "done getting features for songs in " + str(collection)
+        #db.drop_collection(collection) #remove old collection
+        #collection = db[collection] #reset the collection
+        #results = collection.insert_many(songList)
+        return songList
+        #return "done getting features for songs in " + str(collection)
 
     def getTrackFeatures(self, uri):
     #get audio features for 1 or more tracks (max of 100)
