@@ -116,7 +116,11 @@ def analysis():
     unpackedData = pldata.split(",")
 
     d = data(access_token)
+
+    #top = d.getTop50()
+    #rec = d.getRecentSongs()
     prof = d.profile()
+
     userName = prof.get("userName")
 
     #retrieve songs and analysis for user selected playlistsDB
@@ -211,4 +215,4 @@ def refresh():
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 if __name__ == "__main__":
-    app.run(debug=False, port=PORT)
+    app.run(debug=True, port=PORT)

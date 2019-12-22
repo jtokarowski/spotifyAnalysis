@@ -30,7 +30,7 @@ ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
-SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private"
+SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
@@ -414,3 +414,27 @@ class data:
         response_data = json.loads(response.text) 
         genres = response_data['artists'][0]['genres'] 
         return genres
+
+    def getRecentSongs(self):
+
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        api_endpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text) 
+
+        idlist = []
+        for i in range(len(response_data['items'])):
+            idlist.append(response_data['items'][i]['track']['id'])
+
+        return idlist
+
+        #the response_data['next'] field provides the endpoint to hit for next 50 songs
+        
+    def getTop50(self):
+
+        #static link for global top50
+
+        results = self.getPlaylistTracks("spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
+        
+        return results
