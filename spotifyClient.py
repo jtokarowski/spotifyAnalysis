@@ -434,7 +434,86 @@ class data:
     def getTop50(self):
 
         #static link for global top50
-
         results = self.getPlaylistTracks("spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
         
         return results
+
+    def getSuggestions(self, targets, seeds, limit):
+
+        #targets is a dict, grab the values from it
+
+        # min and max could be a confidence interval around the target
+        #can i express this as a zscore?
+        #standard deviation of songs around the choice, set limits at 1 or 2 stdevs
+        #max_acousticness = target_accousticness+stdev(accousticness)
+        #min_acousticness = target_accousticness-stdev(accousticness)
+        # &seed_genres=classical&seed_tracks=3Rxp9OMUjOrUTRNSIqS3NY&target_key=1
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        api_endpoint = "{}/recommendations?limit={}&market=US&seed_tracks={}&target_acousticness={}&target_danceability={}&target_energy={}&target_instrumentalness={}&target_liveness={}&target_speechiness={}&target_valence={}".format(SPOTIFY_API_URL, limit, seeds, float(targets['acousticness']), float(targets['danceability']), float(targets['energy']), float(targets['instrumentalness']), float(targets['liveness']), float(targets['speechiness']), float(targets['valence']))
+        response = requests.get(api_endpoint, headers=authorization_header)
+
+        response_data = json.loads(response.text)
+        uriList = []
+
+        for i in range(len(response_data['tracks'])):
+            uriList.append(response_data['tracks'][i]['id'])
+
+        return uriList
+
+#         targets = {
+#     "danceability": 0.743,
+#     "energy": 0.695,
+#     "key": 2,
+#     "loudness": -9.369,
+#     "mode": 1,
+#     "speechiness": 0.0394,
+#     "acousticness": 0.00589,
+#     "instrumentalness": 0.921,
+#     "liveness": 0.0954,
+#     "valence": 0.0601,
+#     "tempo": 117.982,
+#     "type": "audio_features",
+#     "id": "2ZBz0xlDTXIDlngBvBhvcC",
+#     "uri": "spotify:track:2ZBz0xlDTXIDlngBvBhvcC",
+#     "track_href": "https://api.spotify.com/v1/tracks/2ZBz0xlDTXIDlngBvBhvcC",
+#     "analysis_url": "https://api.spotify.com/v1/audio-analysis/2ZBz0xlDTXIDlngBvBhvcC",
+#     "duration_ms": 473276,
+#     "time_signature": 4
+# }
+
+
+
+        #limit=10
+        #market=US
+
+        #seed_genres=classical
+        #seed_artists=0JOxt5QOwq0czoJxvSc5hS
+        #seed_tracks=3Rxp9OMUjOrUTRNSIqS3NY
+
+        #number of 'seeds' across the 3 options is max 5
+        # if genre in available genre seeds list, then use it
+
+        #&min_acousticness=0
+        #max_acousticness=1
+        #target_acousticness=.8
+        #min_danceability=0
+        #max_danceability=1
+        #target_danceability=.5
+        #min_energy=0
+        #max_energy=1
+        #target_energy=.5
+        #min_instrumentalness=0
+        #max_instrumentalness=1
+        #target_instrumentalness=.5
+        #target_key=1&min_liveness=0
+        #max_liveness=1
+        #target_liveness=.5
+        #min_speechiness=0
+        #max_speechiness=1
+        #target_speechiness=.5
+        #min_valence=0
+        #max_valence=1
+        #target_valence=.5
+
+        #return songs

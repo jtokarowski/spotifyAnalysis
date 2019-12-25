@@ -130,7 +130,7 @@ def analysis():
         masterSongList.extend(songs)
 
     finalsongs = d.trackFeatures(masterSongList)
-
+    
     #set up kmeans, check how many songs
     if len(masterSongList)<5:
         clusters = len(masterSongList)
@@ -138,6 +138,16 @@ def analysis():
         clusters = 5
 
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
+    
+    # for song in finalsongs:
+    #     for feature in featuresList:
+    #         print(feature, song['audioFeatures'][feature])
+
+    # #print(finalsongs)
+    # input()
+
+
+
     statistics = stats(finalsongs)
     statistics.kMeans(featuresList, clusters)
 
@@ -152,9 +162,13 @@ def analysis():
     for i in range(clusters):
         descript = ""
         center = centers[i]
+        targets = {}
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
+            targets[featuresList[j]] = center[j]
             descript += entry
+
+            #we can return less detail here, maybe 'highly danceable' is sufficient
 
         descript +=" created on {}".format(NICEDATE)
         descript+=" by JTokarowski "
@@ -170,10 +184,11 @@ def analysis():
         most_common,num_most_common = Counter(gs).most_common(1)[0] 
 
         if most_common in repeatgenres.keys():
-            most_common += " "+str(repeatgenres[most_common]+1)
+            most_common += " "+str(repeatgenres[most_common])
+            repeatgenres[most_common]+=1
             
         else:
-            repeatgenres[most_common]=1
+            repeatgenres[most_common]=2
         
 
         response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
@@ -184,6 +199,13 @@ def analysis():
 
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
+        #seeds = [] #recode to dict later
+        #print(targets)
+        #input()
+
+        suggestions = d.getSuggestions(targets, idList[0],1)
+        idList.extend(suggestions)
+
         uriList=[]
         for item in idList:
             uriList.append("spotify:track:{}".format(item))

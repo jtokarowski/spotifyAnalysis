@@ -100,6 +100,14 @@ class stats:
         
         self.df = X
         self.centers = centers
+        
+        #listofdicts = []
+        # i = 0
+        # for feature in featuresList:
+        #     centersdict[feature] = centers[i]
+        #     i+=1
+
+        # self.centersdicts.append = centersdict
 
         return
 
