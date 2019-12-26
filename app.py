@@ -183,12 +183,15 @@ def analysis():
 
         most_common,num_most_common = Counter(gs).most_common(1)[0] 
 
-        if most_common in repeatgenres.keys():
-            most_common += " "+str(repeatgenres[most_common])
-            repeatgenres[most_common]+=1
+        stripped_most_common = most_common.replace(" ","")
+
+        if stripped_most_common in repeatgenres.keys():
+            repeatgenres[stripped_most_common]+=1
+            most_common += " "+str(repeatgenres[stripped_most_common])
+            
             
         else:
-            repeatgenres[most_common]=2
+            repeatgenres[stripped_most_common]=1
         
 
         response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
