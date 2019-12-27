@@ -166,7 +166,11 @@ def analysis():
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
             key = "target_{}".format(featuresList[j])
+            #key2 = "min_{}".format(featuresList[j])
+            #key3 = "max_{}".format(featuresList[j])
             targets[key] = center[j]
+            #targets[key2] = center[j]-0.1
+            #targets[key3] = center[j]+0.1
             descript += entry
 
             #we can return less detail here, maybe 'highly danceable' is sufficient
@@ -176,27 +180,31 @@ def analysis():
 
         dfi = df.loc[df['kMeansAssignment'] == i]
 
-        g = dfi['genres']
-        genreslist = g.values.tolist()
+        genres = dfi['genres'].values.tolist()
+        genreslist = genres[0]
 
-        if len(genreslist)==1:
-            most_common = genreslist[0]
-        else:
-            gs = []
-            for genre in genreslist:
-                gs.extend(genre)
-
-            most_common,num_most_common = Counter(gs).most_common(1)[0] 
-            stripped_most_common = most_common.replace(" ","")
-
-            if stripped_most_common in repeatgenres.keys():
-                repeatgenres[stripped_most_common]+=1
-                most_common += " "+str(repeatgenres[stripped_most_common])
+        genreDict = {}
+        for genre in genreslist:
+            g =  genre.replace(" ", "_")
+            if g in genreDict:
+                genreDict[g]+=1
             else:
-                repeatgenres[stripped_most_common]=1
+                genreDict[g]=1
+
+        v=list(genreDict.values())
+        k=list(genreDict.keys())
+        maxGenre = k[v.index(max(v))]
+
+        if maxGenre in repeatgenres.keys():
+            repeatgenres[maxGenre]+=1
+            maxGenre += "_"+str(repeatgenres[maxGenre])
+        else:
+            repeatgenres[maxGenre]=1
+
+        maxGenre = maxGenre.replace("_", " ")
         
 
-        response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
+        response2 = c1.newPlaylist(userName, "+| "+str(maxGenre)+" |+",descript)
         r2 = response2['uri']
         fields = r2.split(":")
         plid = fields[2]
