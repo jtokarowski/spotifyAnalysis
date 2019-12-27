@@ -409,10 +409,12 @@ class data:
             
                 return genres
 
-        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids)
+        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids[0])
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text) 
+
         genres = response_data['artists'][0]['genres'] 
+        
         return genres
 
     def getRecentSongs(self):
@@ -438,9 +440,33 @@ class data:
         
         return results
 
-    def getSuggestions(self, targets, seeds, limit):
+    def getSuggestions(self, targets, market=None, limit=20, seed_artists=None, seed_genres=None, seed_tracks=None):
 
-        #targets is a dict, grab the values from it
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
+
+        if market:
+            api_endpoint+="market={}".format(market)
+        else:
+            api_endpoint+="market=US"
+
+        #SEEDS
+        if seed_artists:
+            api_endpoint+="&seed_artists={}".format(seed_artists)
+        if seed_genres:
+            api_endpoint+="&seed_genres={}".format(seed_genres)
+        if seed_tracks:
+            api_endpoint+="&seed_tracks={}".format(seed_tracks)
+
+        #TARGETS, MINS, MAXS
+        for attribute in ["acousticness", "danceability", "duration_ms",
+                           "energy", "instrumentalness", "key", "liveness",
+                           "loudness", "mode", "popularity", "speechiness",
+                           "tempo", "time_signature", "valence"]:
+             for prefix in ["min_", "max_", "target_"]:
+                 param = prefix + attribute
+                 if param in targets:
+                    api_endpoint+="&{}={}".format(param,targets[param])
 
         # min and max could be a confidence interval around the target
         #can i express this as a zscore?
@@ -449,8 +475,8 @@ class data:
         #min_acousticness = target_accousticness-stdev(accousticness)
         # &seed_genres=classical&seed_tracks=3Rxp9OMUjOrUTRNSIqS3NY&target_key=1
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/recommendations?limit={}&market=US&seed_tracks={}&target_acousticness={}&target_danceability={}&target_energy={}&target_instrumentalness={}&target_liveness={}&target_speechiness={}&target_valence={}".format(SPOTIFY_API_URL, limit, seeds, float(targets['acousticness']), float(targets['danceability']), float(targets['energy']), float(targets['instrumentalness']), float(targets['liveness']), float(targets['speechiness']), float(targets['valence']))
+        
+
         response = requests.get(api_endpoint, headers=authorization_header)
 
         response_data = json.loads(response.text)

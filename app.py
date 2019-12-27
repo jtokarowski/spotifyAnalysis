@@ -165,7 +165,8 @@ def analysis():
         targets = {}
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
-            targets[featuresList[j]] = center[j]
+            key = "target_{}".format(featuresList[j])
+            targets[key] = center[j]
             descript += entry
 
             #we can return less detail here, maybe 'highly danceable' is sufficient
@@ -177,21 +178,22 @@ def analysis():
 
         g = dfi['genres']
         genreslist = g.values.tolist()
-        gs = []
-        for genre in genreslist:
-            gs.extend(genre)
 
-        most_common,num_most_common = Counter(gs).most_common(1)[0] 
-
-        stripped_most_common = most_common.replace(" ","")
-
-        if stripped_most_common in repeatgenres.keys():
-            repeatgenres[stripped_most_common]+=1
-            most_common += " "+str(repeatgenres[stripped_most_common])
-            
-            
+        if len(genreslist)==1:
+            most_common = genreslist[0]
         else:
-            repeatgenres[stripped_most_common]=1
+            gs = []
+            for genre in genreslist:
+                gs.extend(genre)
+
+            most_common,num_most_common = Counter(gs).most_common(1)[0] 
+            stripped_most_common = most_common.replace(" ","")
+
+            if stripped_most_common in repeatgenres.keys():
+                repeatgenres[stripped_most_common]+=1
+                most_common += " "+str(repeatgenres[stripped_most_common])
+            else:
+                repeatgenres[stripped_most_common]=1
         
 
         response2 = c1.newPlaylist(userName, "+| "+str(most_common)+" |+",descript)
@@ -202,11 +204,8 @@ def analysis():
 
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
-        #seeds = [] #recode to dict later
-        #print(targets)
-        #input()
 
-        suggestions = d.getSuggestions(targets, idList[0],1)
+        suggestions = d.getSuggestions(targets=targets, limit=100, seed_tracks = idList[0])
         idList.extend(suggestions)
 
         uriList=[]
