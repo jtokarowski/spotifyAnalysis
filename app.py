@@ -206,7 +206,11 @@ def analysis():
             repeatgenres[maxGenre]=1
 
         maxGenre = maxGenre.replace("_", " ")
-        
+
+
+        #print(d.getMyTop(topType='artists', term='long_term'))
+        #print(d.getMyTop(topType='tracks', term='long_term'))
+        #input()
 
         response2 = c1.newPlaylist(userName, "+| "+str(maxGenre)+" |+",descript)
         r2 = response2['uri']
@@ -216,6 +220,7 @@ def analysis():
 
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
+
 
         #seeds = d.getGenreSeeds()
         #for seed in seeds:

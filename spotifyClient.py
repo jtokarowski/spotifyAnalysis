@@ -30,7 +30,7 @@ ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
 PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
 PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
-SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played"
+SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"
 STATE = "" #Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
@@ -430,9 +430,17 @@ class data:
             idlist.append(response_data['items'][i]['track']['id'])
 
         return idlist
-
         #the response_data['next'] field provides the endpoint to hit for next 50 songs
         
+    def getMyTop(self, topType, term):
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        api_endpoint = "{}/me/top/{}?time_range={}".format(SPOTIFY_API_URL,topType,term)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text) 
+
+        return response_data
+   
     def getTop50(self):
 
         #static link for global top50
