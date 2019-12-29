@@ -169,8 +169,8 @@ def analysis():
             key2 = "min_{}".format(featuresList[j])
             key3 = "max_{}".format(featuresList[j])
             targets[key] = center[j]
-            targets[key2] = center[j]-0.1
-            targets[key3] = center[j]+0.1
+            targets[key2] = center[j]-0.2
+            targets[key3] = center[j]+0.2
             descript += entry
 
             #we can return less detail here, maybe 'highly danceable' is sufficient
@@ -198,7 +198,7 @@ def analysis():
             maxGenre = k[v.index(max(v))]
         except:
             maxGenre = "¯\_(ツ)_/¯"
-        
+
         if maxGenre in repeatgenres.keys():
             repeatgenres[maxGenre]+=1
             maxGenre += "_"+str(repeatgenres[maxGenre])
@@ -217,7 +217,10 @@ def analysis():
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
 
-        suggestions = d.getSuggestions(targets=targets, limit=1, seed_tracks = idList[0])
+        #seeds = d.getGenreSeeds()
+        #for seed in seeds:
+        suggestions = d.getRecommendations(targets=targets, limit=100, seed_tracks=idList[0]) #seed_genres=seed) #seed_tracks = "1L5VP9PWCU5dRzl1bvlFkJ,5bHbUMtuZIpHtTPdoJmcaN", seed_artists="6TwTAUcCILwoSPY2N3etuY") #idList[0],
+        #print(suggestions)
         idList.extend(suggestions)
 
         uriList=[]

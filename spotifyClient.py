@@ -390,7 +390,7 @@ class data:
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text)     
 
-        return response_data
+        return response_data['genres']
 
     def getArtistGenres(self, artistids):
 
@@ -440,7 +440,7 @@ class data:
         
         return results
 
-    def getSuggestions(self, targets, market=None, limit=1, seed_artists=None, seed_genres=None, seed_tracks=None):
+    def getRecommendations(self, targets, market=None, limit=20, seed_artists=None, seed_genres=None, seed_tracks=None):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
@@ -480,66 +480,13 @@ class data:
         response = requests.get(api_endpoint, headers=authorization_header)
 
         response_data = json.loads(response.text)
+
+        print(response_data['seeds'])
+        
         uriList = []
 
         for i in range(len(response_data['tracks'])):
             uriList.append(response_data['tracks'][i]['id'])
 
+
         return uriList
-
-#         targets = {
-#     "danceability": 0.743,
-#     "energy": 0.695,
-#     "key": 2,
-#     "loudness": -9.369,
-#     "mode": 1,
-#     "speechiness": 0.0394,
-#     "acousticness": 0.00589,
-#     "instrumentalness": 0.921,
-#     "liveness": 0.0954,
-#     "valence": 0.0601,
-#     "tempo": 117.982,
-#     "type": "audio_features",
-#     "id": "2ZBz0xlDTXIDlngBvBhvcC",
-#     "uri": "spotify:track:2ZBz0xlDTXIDlngBvBhvcC",
-#     "track_href": "https://api.spotify.com/v1/tracks/2ZBz0xlDTXIDlngBvBhvcC",
-#     "analysis_url": "https://api.spotify.com/v1/audio-analysis/2ZBz0xlDTXIDlngBvBhvcC",
-#     "duration_ms": 473276,
-#     "time_signature": 4
-# }
-
-
-
-        #limit=10
-        #market=US
-
-        #seed_genres=classical
-        #seed_artists=0JOxt5QOwq0czoJxvSc5hS
-        #seed_tracks=3Rxp9OMUjOrUTRNSIqS3NY
-
-        #number of 'seeds' across the 3 options is max 5
-        # if genre in available genre seeds list, then use it
-
-        #&min_acousticness=0
-        #max_acousticness=1
-        #target_acousticness=.8
-        #min_danceability=0
-        #max_danceability=1
-        #target_danceability=.5
-        #min_energy=0
-        #max_energy=1
-        #target_energy=.5
-        #min_instrumentalness=0
-        #max_instrumentalness=1
-        #target_instrumentalness=.5
-        #target_key=1&min_liveness=0
-        #max_liveness=1
-        #target_liveness=.5
-        #min_speechiness=0
-        #max_speechiness=1
-        #target_speechiness=.5
-        #min_valence=0
-        #max_valence=1
-        #target_valence=.5
-
-        #return songs
