@@ -419,7 +419,6 @@ class data:
 
     def getRecentSongs(self):
 
-
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
         response = requests.get(api_endpoint, headers=authorization_header)
@@ -432,10 +431,10 @@ class data:
         return idlist
         #the response_data['next'] field provides the endpoint to hit for next 50 songs
         
-    def getMyTop(self, topType, term):
+    def getMyTop(self, topType, term ,limit):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/top/{}?time_range={}".format(SPOTIFY_API_URL,topType,term)
+        api_endpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text) 
 

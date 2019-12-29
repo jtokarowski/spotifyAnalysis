@@ -116,10 +116,17 @@ def analysis():
     unpackedData = pldata.split(",")
 
     d = data(access_token)
-
+    prof = d.profile()
     #top = d.getTop50()
     #rec = d.getRecentSongs()
-    prof = d.profile()
+    stTop = d.getMyTop(topType='artists', term='short_term', limit=5)
+    for artist in stTop['items']:
+        print(artist['name'])
+        print(artist['id'])
+
+    input()
+    #print(d.getMyTop(topType='tracks', term='long_term'))
+    
 
     userName = prof.get("userName")
 
@@ -139,26 +146,14 @@ def analysis():
 
     featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     
-    # for song in finalsongs:
-    #     for feature in featuresList:
-    #         print(feature, song['audioFeatures'][feature])
-
-    # #print(finalsongs)
-    # input()
-
-
-
     statistics = stats(finalsongs)
     statistics.kMeans(featuresList, clusters)
-
     df = statistics.df
     centers = statistics.centers
-
 
     #create playlists for each kmeans assignment
     c1 = create(access_token)
     repeatgenres = {}
-
     for i in range(clusters):
         descript = ""
         center = centers[i]
@@ -206,11 +201,6 @@ def analysis():
             repeatgenres[maxGenre]=1
 
         maxGenre = maxGenre.replace("_", " ")
-
-
-        #print(d.getMyTop(topType='artists', term='long_term'))
-        #print(d.getMyTop(topType='tracks', term='long_term'))
-        #input()
 
         response2 = c1.newPlaylist(userName, "+| "+str(maxGenre)+" |+",descript)
         r2 = response2['uri']
