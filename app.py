@@ -166,11 +166,11 @@ def analysis():
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
             key = "target_{}".format(featuresList[j])
-            #key2 = "min_{}".format(featuresList[j])
-            #key3 = "max_{}".format(featuresList[j])
+            key2 = "min_{}".format(featuresList[j])
+            key3 = "max_{}".format(featuresList[j])
             targets[key] = center[j]
-            #targets[key2] = center[j]-0.1
-            #targets[key3] = center[j]+0.1
+            targets[key2] = center[j]-0.1
+            targets[key3] = center[j]+0.1
             descript += entry
 
             #we can return less detail here, maybe 'highly danceable' is sufficient
@@ -193,8 +193,12 @@ def analysis():
 
         v=list(genreDict.values())
         k=list(genreDict.keys())
-        maxGenre = k[v.index(max(v))]
 
+        try:
+            maxGenre = k[v.index(max(v))]
+        except:
+            maxGenre = "¯\_(ツ)_/¯"
+        
         if maxGenre in repeatgenres.keys():
             repeatgenres[maxGenre]+=1
             maxGenre += "_"+str(repeatgenres[maxGenre])
@@ -213,7 +217,7 @@ def analysis():
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
 
-        suggestions = d.getSuggestions(targets=targets, limit=100, seed_tracks = idList[0])
+        suggestions = d.getSuggestions(targets=targets, limit=1, seed_tracks = idList[0])
         idList.extend(suggestions)
 
         uriList=[]

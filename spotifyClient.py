@@ -440,7 +440,7 @@ class data:
         
         return results
 
-    def getSuggestions(self, targets, market=None, limit=20, seed_artists=None, seed_genres=None, seed_tracks=None):
+    def getSuggestions(self, targets, market=None, limit=1, seed_artists=None, seed_genres=None, seed_tracks=None):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
