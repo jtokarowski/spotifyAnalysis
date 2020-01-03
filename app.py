@@ -105,6 +105,8 @@ def authed():
 @app.route("/analysis", methods=["GET"])
 def analysis():
 
+    featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
+
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer"
@@ -117,36 +119,90 @@ def analysis():
 
     d = data(access_token)
     prof = d.profile()
-    #top = d.getTop50()
-    #rec = d.getRecentSongs()
-    stTop = d.getMyTop(topType='artists', term='short_term', limit=5)
-    for artist in stTop['items']:
-        print(artist['name'])
-        print(artist['id'])
-
-    input()
-    #print(d.getMyTop(topType='tracks', term='long_term'))
-    
-
     userName = prof.get("userName")
-
     #retrieve songs and analysis for user selected playlistsDB
     masterSongList=[]
     for i in range(len(unpackedData)):
         songs = d.getPlaylistTracks(unpackedData[i])
         masterSongList.extend(songs)
 
-    finalsongs = d.trackFeatures(masterSongList)
+    playlistsongs = d.trackFeatures(masterSongList)
+    #top = d.getTop50()
+    #rec = d.getRecentSongs()
+
+    ################################################################################################
+    ## EXPERIMENTAL REC FUNCTION ###
     
+    # stTop = d.getMyTop(topType='artists', term='short_term', limit=5)
+    # topArtistIds = []
+    # for artist in stTop['items']:
+    #     topArtistIds.append(artist['id'])
+    # artistSeeds = ",".join(topArtistIds)
+
+    # targets = []
+    # recs = []
+    # recids = []
+    # for song in playlistsongs:
+    #     target = {}
+    #     for j in range(len(featuresList)):
+    #         key = "target_{}".format(featuresList[j])
+    #         target[key] = song['audioFeatures'][featuresList[j]]
+
+    #     recommendations = d.getRecommendations(targets=target, limit=100, seed_artists=artistSeeds) 
+    #     finalrecs = d.trackFeatures(recommendations)
+        
+    #     #euclideanDistance
+    #     TEDS=[]
+    #     for rec in finalrecs:
+    #         TED = 0
+    #         for feature in featuresList:
+    #             diff = (rec['audioFeatures'][feature]*100)-(song['audioFeatures'][featuresList[j]]*100)
+    #             TED += diff * diff
+    #         rec["TED"] = TED
+    #         TEDS.append(TED)
+
+    #     index_min_TED = TEDS.index(min(TEDS))
+    #     recs.append(finalrecs[index_min_TED])
+    #     recids.append(finalrecs[index_min_TED]['trackId'])
+    #     targets.append(target)
+
+    # c1 = create(access_token)
+    # response2 = c1.newPlaylist(userName, "+| TEST SET |+","N/A")
+    # r2 = response2['uri']
+    # fields = r2.split(":")
+    # plid = fields[2]
+    # uriList=[]
+    # for item in recids:
+    #     uriList.append("spotify:track:{}".format(item))
+    # if len(uriList)>0:
+    #     n = 50 #spotify playlist addition limit
+    #     for j in range(0, len(uriList), n):  
+    #         listToSend = uriList[j:j + n]
+    #         stringList = ",".join(listToSend)
+    #         response3 = c1.addSongs(plid, stringList)
+
+    # input()
+
+    
+    #sort by minimum euclidean distance from coordinates of curve
+    #get recomendations from first chosen song
+    #as we move forward in the set, trailing 5 songs as seeds
+
+
+    #print(d.getMyTop(topType='tracks', term='long_term'))    
+
+    
+    ################################################################
+    # WORKING CLUSTER SECTION)
+
     #set up kmeans, check how many songs
     if len(masterSongList)<5:
         clusters = len(masterSongList)
     else:
         clusters = 5
 
-    featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
     
-    statistics = stats(finalsongs)
+    statistics = stats(playlistsongs)
     statistics.kMeans(featuresList, clusters)
     df = statistics.df
     centers = statistics.centers
@@ -161,11 +217,11 @@ def analysis():
         for j in range(len(featuresList)):
             entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
             key = "target_{}".format(featuresList[j])
-            key2 = "min_{}".format(featuresList[j])
-            key3 = "max_{}".format(featuresList[j])
+            #key2 = "min_{}".format(featuresList[j])
+            #key3 = "max_{}".format(featuresList[j])
             targets[key] = center[j]
-            targets[key2] = center[j]-0.2
-            targets[key3] = center[j]+0.2
+            #targets[key2] = center[j]-0.2
+            #targets[key3] = center[j]+0.2
             descript += entry
 
             #we can return less detail here, maybe 'highly danceable' is sufficient
@@ -210,13 +266,6 @@ def analysis():
 
         dfi = dfi['trackId']
         idList = dfi.values.tolist()
-
-
-        #seeds = d.getGenreSeeds()
-        #for seed in seeds:
-        suggestions = d.getRecommendations(targets=targets, limit=100, seed_tracks=idList[0]) #seed_genres=seed) #seed_tracks = "1L5VP9PWCU5dRzl1bvlFkJ,5bHbUMtuZIpHtTPdoJmcaN", seed_artists="6TwTAUcCILwoSPY2N3etuY") #idList[0],
-        #print(suggestions)
-        idList.extend(suggestions)
 
         uriList=[]
         for item in idList:

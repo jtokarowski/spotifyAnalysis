@@ -113,7 +113,11 @@ class stats:
 
     def euclideanDistance(x, featuresList, centers):
         totalEuclideanDistance = 0
-        assignedCenter = centers[x['kMeansAssignment']]
+        if type(centers)==list:
+            assignedCenter = centers
+        else:
+            assignedCenter = centers[x['kMeansAssignment']]
+
         for i in range(len(featuresList)):
             diff = (x[featuresList[i]]*100) - (assignedCenter[i]*100)
             totalEuclideanDistance += diff * diff

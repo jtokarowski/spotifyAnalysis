@@ -235,6 +235,17 @@ class data:
 
         return playlists
 
+    def getTracks(self, songs):
+
+        ids = ",".join(songs)
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        api_endpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,ids)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text) 
+
+        return response_data
+
     def trackFeatures(self, songs):
 
         d1 = data(self.access_token)
@@ -243,9 +254,6 @@ class data:
         artistIdList = [] #list of artist ids to send for genre
         
         for song in songs: #within playlist
-
-            #newDoc['collection'] = collection  
-            ##relocate this to playlist song retrieval######
             songList.append(song)
             if song['trackId'] == None:
                 uriList.append('None')
@@ -256,7 +264,7 @@ class data:
         set_artistids = set(artistIdList)
         unique_artistids = list(set_artistids)
 
-        #break up by spotify artist id limit
+        #break up by spotify artist id limita
         allGenresList = []
         m = 50
         for j in range(0, len(unique_artistids), m):  
@@ -360,16 +368,22 @@ class data:
     #reformats song information to drop unecessary data
 
         songInfo = {} 
-
-        trackId = song['track']['id']
-        name = song['track']['name']
+        try:
+            trackId = song['track']['id']
+            name = song['track']['name']
+            artistList = song['track']['artists']
+        except:
+            trackId = song['id']
+            name = song['name']
+            artistList = song['artists']
+        
         name = name.title()
         trackName = name.replace(" ", "")
 
         songInfo['trackName'] = trackName
         songInfo['trackId'] = trackId
 
-        artistList = song['track']['artists']
+        
         artistNameList = []
         artistIdList = []
         for i in range(len(artistList)):
@@ -485,15 +499,12 @@ class data:
         
 
         response = requests.get(api_endpoint, headers=authorization_header)
-
         response_data = json.loads(response.text)
 
-        print(response_data['seeds'])
-        
-        uriList = []
+        output = []
+        for song in response_data['tracks']:
+            output.append(self.cleanSongData(song))
 
-        for i in range(len(response_data['tracks'])):
-            uriList.append(response_data['tracks'][i]['id'])
+        #print(response_data['seeds'])
 
-
-        return uriList
+        return output
