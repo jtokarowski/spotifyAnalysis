@@ -461,7 +461,7 @@ class data:
         
         return results
 
-    def getRecommendations(self, targets, market=None, limit=20, seed_artists=None, seed_genres=None, seed_tracks=None):
+    def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
@@ -470,6 +470,11 @@ class data:
             api_endpoint+="market={}".format(market)
         else:
             api_endpoint+="market=US"
+
+        if not limit:
+            limit = 20
+
+        api_endpoint+="&limit={}".format(limit)
 
         #SEEDS
         if seed_artists:
@@ -480,22 +485,15 @@ class data:
             api_endpoint+="&seed_tracks={}".format(seed_tracks)
 
         #TARGETS, MINS, MAXS
-        for attribute in ["acousticness", "danceability", "duration_ms",
+        if targets:
+            for attribute in ["acousticness", "danceability", "duration_ms",
                            "energy", "instrumentalness", "key", "liveness",
                            "loudness", "mode", "popularity", "speechiness",
                            "tempo", "time_signature", "valence"]:
-             for prefix in ["min_", "max_", "target_"]:
-                 param = prefix + attribute
-                 if param in targets:
-                    api_endpoint+="&{}={}".format(param,targets[param])
-
-        # min and max could be a confidence interval around the target
-        #can i express this as a zscore?
-        #standard deviation of songs around the choice, set limits at 1 or 2 stdevs
-        #max_acousticness = target_accousticness+stdev(accousticness)
-        #min_acousticness = target_accousticness-stdev(accousticness)
-        # &seed_genres=classical&seed_tracks=3Rxp9OMUjOrUTRNSIqS3NY&target_key=1
-
+                for prefix in ["min_", "max_", "target_"]:
+                    param = prefix + attribute
+                    if param in targets:
+                        api_endpoint+="&{}={}".format(param,targets[param])
         
 
         response = requests.get(api_endpoint, headers=authorization_header)
@@ -505,6 +503,6 @@ class data:
         for song in response_data['tracks']:
             output.append(self.cleanSongData(song))
 
-        #print(response_data['seeds'])
+        print(response_data['seeds'])
 
         return output
