@@ -128,99 +128,104 @@ def analysis():
 
     playlistsongs = d.trackFeatures(masterSongList)
 
+    #testing the audio analysis method
+    #response = d.getAudioAnalysis("3YwyAnL9NlqAK9V833qiGz")
+    #print(response)
+    #input()
+
     #top = d.getTop50()
     #rec = d.getRecentSongs()
 
     ################################################################################################
     ## EXPERIMENTAL REC FUNCTION ###
     
-    stTop = d.getMyTop(topType='artists', term='short_term', limit=10)
-    mtTop = d.getMyTop(topType='artists', term='medium_term', limit=10)
-    ltTop = d.getMyTop(topType='artists', term='long_term', limit=10)
+   #  stTop = d.getMyTop(topType='artists', term='short_term', limit=10)
+   #  mtTop = d.getMyTop(topType='artists', term='medium_term', limit=10)
+   #  ltTop = d.getMyTop(topType='artists', term='long_term', limit=10)
 
-    artists = []
-    artists.extend(stTop['items'])
-    artists.extend(mtTop['items'])
-    artists.extend(ltTop['items'])
+   #  artists = []
+   #  artists.extend(stTop['items'])
+   #  artists.extend(mtTop['items'])
+   #  artists.extend(ltTop['items'])
 
-    #topartists = stTop.extend(mtTop,ltTop)
+   #  #topartists = stTop.extend(mtTop,ltTop)
 
-    topArtistIds = []
-    for artist in artists:
-        topArtistIds.append(artist['id'])
+   #  topArtistIds = []
+   #  for artist in artists:
+   #      topArtistIds.append(artist['id'])
 
-    #remove dupes
-    topArtistIds = list(set(topArtistIds))
+   #  #remove dupes
+   #  topArtistIds = list(set(topArtistIds))
 
 
-    m = 5
-    masterpool = []
-    for i in range(0, len(topArtistIds), m):  
-        listToSend = topArtistIds[i:i + m]
-        stringList = ",".join(listToSend)
-        recommendations = d.getRecommendations(limit=100, seed_artists=stringList)
-        masterpool.extend(recommendations)
+   #  m = 5
+   #  masterpool = []
+   #  for i in range(0, len(topArtistIds), m):  
+   #      listToSend = topArtistIds[i:i + m]
+   #      stringList = ",".join(listToSend)
+   #      recommendations = d.getRecommendations(limit=100, seed_artists=stringList)
+   #      masterpool.extend(recommendations)
 
-    finalrecs = d.trackFeatures(masterpool)
+   #  finalrecs = d.trackFeatures(masterpool)
 
-    #print(masterpool)
-    #input()
+   #  #print(masterpool)
+   #  #input()
 
-    #targets = []
-    recs = []
-    recids = []
-    for song in playlistsongs:
-        #target = {}
-        #for j in range(len(featuresList)):
-        #    key = "target_{}".format(featuresList[j])
-        #    target[key] = song['audioFeatures'][featuresList[j]]
+   #  #targets = []
+   #  recs = []
+   #  recids = []
+   #  for song in playlistsongs:
+   #      #target = {}
+   #      #for j in range(len(featuresList)):
+   #      #    key = "target_{}".format(featuresList[j])
+   #      #    target[key] = song['audioFeatures'][featuresList[j]]
  
-        #################################################################
-        ###MAP REDUCE WOULD BE FASTER HERE##
+   #      #################################################################
+   #      ###MAP REDUCE WOULD BE FASTER HERE##
         
-        #euclideanDistance
-        TEDS=[]
-        for rec in finalrecs:
-            TED = 0
-            for feature in featuresList:
-                diff = (rec['audioFeatures'][feature]*100)-(song['audioFeatures'][feature]*100)
-                TED += diff * diff
-            rec["TED"] = TED
-            TEDS.append(TED)
+   #      #euclideanDistance
+   #      TEDS=[]
+   #      for rec in finalrecs:
+   #          TED = 0
+   #          for feature in featuresList:
+   #              diff = (rec['audioFeatures'][feature]*100)-(song['audioFeatures'][feature]*100)
+   #              TED += diff * diff
+   #          rec["TED"] = TED
+   #          TEDS.append(TED)
 
-        index_min_TED = TEDS.index(min(TEDS))
-        recs.append(finalrecs[index_min_TED])
-        recids.append(finalrecs[index_min_TED]['trackId'])
-        recids = list(set(recids))
-        #targets.append(target)
+   #      index_min_TED = TEDS.index(min(TEDS))
+   #      recs.append(finalrecs[index_min_TED])
+   #      recids.append(finalrecs[index_min_TED]['trackId'])
+   #      recids = list(set(recids))
+   #      #targets.append(target)
 
-        ##ENSURE SONG NOT DUPED
+   #      ##ENSURE SONG NOT DUPED
 
-    c1 = create(access_token)
-    response2 = c1.newPlaylist(userName, "+| TEST SET |+","N/A")
-    r2 = response2['uri']
-    fields = r2.split(":")
-    plid = fields[2]
-    uriList=[]
-    for item in recids:
-        uriList.append("spotify:track:{}".format(item))
-    if len(uriList)>0:
-        n = 50 #spotify playlist addition limit
-        for j in range(0, len(uriList), n):  
-            listToSend = uriList[j:j + n]
-            stringList = ",".join(listToSend)
-            response3 = c1.addSongs(plid, stringList)
-
-
-    input()
-
-   ################################################################ 
-    #sort by minimum euclidean distance from coordinates of curve
-    #get recomendations from first chosen song
-    #as we move forward in the set, trailing 5 songs as seeds
+   #  c1 = create(access_token)
+   #  response2 = c1.newPlaylist(userName, "+| TEST SET |+","N/A")
+   #  r2 = response2['uri']
+   #  fields = r2.split(":")
+   #  plid = fields[2]
+   #  uriList=[]
+   #  for item in recids:
+   #      uriList.append("spotify:track:{}".format(item))
+   #  if len(uriList)>0:
+   #      n = 50 #spotify playlist addition limit
+   #      for j in range(0, len(uriList), n):  
+   #          listToSend = uriList[j:j + n]
+   #          stringList = ",".join(listToSend)
+   #          response3 = c1.addSongs(plid, stringList)
 
 
-    #print(d.getMyTop(topType='tracks', term='long_term'))    
+   #  input()
+
+   # ################################################################ 
+   #  #sort by minimum euclidean distance from coordinates of curve
+   #  #get recomendations from first chosen song
+   #  #as we move forward in the set, trailing 5 songs as seeds
+
+
+   #  #print(d.getMyTop(topType='tracks', term='long_term'))    
 
     
     ################################################################

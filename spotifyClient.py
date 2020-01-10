@@ -322,6 +322,16 @@ class data:
             
         return response_data
 
+    def getAudioAnalysis(self, uri):
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        api_endpoint = "{}/audio-analysis/{}".format(SPOTIFY_API_URL,uri)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(response.text)
+            
+        return response_data
+
     def getPlaylistTracks(self, uri):
         #get tracks for 1 playlist
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
