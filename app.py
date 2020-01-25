@@ -120,6 +120,7 @@ def analysis():
     d = data(access_token)
     prof = d.profile()
     userName = prof.get("userName")
+
     #retrieve songs and analysis for user selected playlistsDB
     masterSongList=[]
     for i in range(len(unpackedData)):
@@ -138,98 +139,192 @@ def analysis():
 
     ################################################################################################
     ## EXPERIMENTAL REC FUNCTION ###
+
+    # test_target_1 = { 
+    # "target_danceability": 0.808,
+    # "target_energy": 0.626,
+    # "target_speechiness": 0.168,
+    # "target_acousticness": 0.00187,
+    # "target_instrumentalness": 0.159,
+    # "target_liveness": 0.376,
+    # "target_valence": 0.369,
+    # "target_key":0,
+    # "min_tempo": 120,
+    # "max_tempo": 130
+    # }
     
-   #  stTop = d.getMyTop(topType='artists', term='short_term', limit=10)
-   #  mtTop = d.getMyTop(topType='artists', term='medium_term', limit=10)
-   #  ltTop = d.getMyTop(topType='artists', term='long_term', limit=10)
+    # test_target_3 = { 
+    # "target_danceability": 0.5,
+    # "target_energy": 0.5,
+    # "target_speechiness": 0.5,
+    # "target_acousticness": 0.5,
+    # "target_instrumentalness": 0.5,
+    # "target_liveness": 0.5,
+    # "target_valence": 0.5,
+    # "target_key":0
+    # }
 
-   #  artists = []
-   #  artists.extend(stTop['items'])
-   #  artists.extend(mtTop['items'])
-   #  artists.extend(ltTop['items'])
+    # recommendations = d.getRecommendations(limit=100, seed_artists='10gzBoINW3cLJfZUka8Zoe')
+    # song_ids = []
+    # song_ids2 = []
+    # song_ids3 = []
+    # song_ids4 = []
+    # for reco in recommendations:
+    #     song_ids.append(reco["trackId"])
+    # recommendations2 = d.getRecommendations(limit=100, seed_artists='10gzBoINW3cLJfZUka8Zoe',targets=test_target_1)
+    # for reco2 in recommendations2:
+    #     song_ids2.append(reco2["trackId"])
+    # recommendations3 = d.getRecommendations(limit=100, seed_artists='10gzBoINW3cLJfZUka8Zoe',targets=test_target_2)
+    # for reco3 in recommendations3:
+    #     song_ids3.append(reco3["trackId"])
+    # recommendations4 = d.getRecommendations(limit=100, seed_artists='10gzBoINW3cLJfZUka8Zoe',targets=test_target_3)
+    # for reco4 in recommendations4:
+    #     song_ids4.append(reco3["trackId"])
 
-   #  #topartists = stTop.extend(mtTop,ltTop)
+    # allrecs = []
+    # allrecs.extend(song_ids)
+    # allrecs.extend(song_ids2)
+    # allrecs.extend(song_ids3)
+    # allrecs.extend(song_ids4)
+    # # insert the list to the set 
+    # list_set = set(allrecs) 
+    # # convert the set to the list 
+    # unique_list = (list(list_set))
+    # print(unique_list) 
+    # print(len(unique_list))
 
-   #  topArtistIds = []
-   #  for artist in artists:
-   #      topArtistIds.append(artist['id'])
+    # print(song_ids)
+    # print(song_ids2)
+    # print(song_ids3)
 
-   #  #remove dupes
-   #  topArtistIds = list(set(topArtistIds))
+    # new_ids = []
+    # for sid in song_ids2:
+    #   if not sid in song_ids:
+    #     new_ids.append(sid)
+    # print(len(new_ids))
+
+    # input()
+
+    stTop = d.getMyTop(topType='artists', term='short_term', limit=10)
+    mtTop = d.getMyTop(topType='artists', term='medium_term', limit=10)
+    ltTop = d.getMyTop(topType='artists', term='long_term', limit=10)
+
+    artists = []
+    artists.extend(stTop)
+    artists.extend(mtTop)
+    artists.extend(ltTop)
+
+    topArtistIds = []
+    for artist in artists:
+        topArtistIds.append(artist['artist_id'])
+
+    #remove dupes
+    topArtistIds = list(set(topArtistIds))
+
+    test_target_1 = { 
+    "target_danceability": 1,
+    "target_energy": 1,
+    "target_speechiness": 1,
+    "target_acousticness": 1,
+    "target_instrumentalness": 1,
+    "target_liveness": 1,
+    "target_valence": 1,
+    "target_key":0
+    }
+    test_target_2 = { 
+    "target_danceability": 0,
+    "target_energy": 0,
+    "target_speechiness": 0,
+    "target_acousticness": 0,
+    "target_instrumentalness": 0,
+    "target_liveness": 0,
+    "target_valence": 0,
+    "target_key":0
+    }
 
 
-   #  m = 5
-   #  masterpool = []
-   #  for i in range(0, len(topArtistIds), m):  
-   #      listToSend = topArtistIds[i:i + m]
-   #      stringList = ",".join(listToSend)
-   #      recommendations = d.getRecommendations(limit=100, seed_artists=stringList)
-   #      masterpool.extend(recommendations)
+    ## Build up a large pool of options by grabbing suggestions for each
+    ## of top artists, target 0 and target 1 to get almost all of pool
+    masterpool = []
+    for i in range(len(topArtistIds)):  
+        #listToSend = topArtistIds[i:i + m]
+        #stringList = ",".join(listToSend)
+        recommendations = d.getRecommendations(limit=100, seed_artists=topArtistIds[i],targets=test_target_1)
+        recommendations2 = d.getRecommendations(limit=100, seed_artists=topArtistIds[i],targets=test_target_2)
+        masterpool.extend(recommendations)
+        masterpool.extend(recommendations2)
 
-   #  finalrecs = d.trackFeatures(masterpool)
 
-   #  #print(masterpool)
-   #  #input()
+    master_ids = []
+    for j in masterpool:
+        master_ids.append(j['trackId'])
 
-   #  #targets = []
-   #  recs = []
-   #  recids = []
-   #  for song in playlistsongs:
-   #      #target = {}
-   #      #for j in range(len(featuresList)):
-   #      #    key = "target_{}".format(featuresList[j])
-   #      #    target[key] = song['audioFeatures'][featuresList[j]]
+    #remove dupes
+    master_ids = list(set(master_ids))
+
+    finalrecs = d.trackFeatures(masterpool)
+
+    #targets = []
+    recs = []
+    recids = []
+    for song in playlistsongs:
+        #target = {}
+        #for j in range(len(featuresList)):
+        #    key = "target_{}".format(featuresList[j])
+        #    target[key] = song['audioFeatures'][featuresList[j]]
  
-   #      #################################################################
-   #      ###MAP REDUCE WOULD BE FASTER HERE##
+        #################################################################
+        ###MAP REDUCE WOULD BE FASTER HERE##
         
-   #      #euclideanDistance
-   #      TEDS=[]
-   #      for rec in finalrecs:
-   #          TED = 0
-   #          for feature in featuresList:
-   #              diff = (rec['audioFeatures'][feature]*100)-(song['audioFeatures'][feature]*100)
-   #              TED += diff * diff
-   #          rec["TED"] = TED
-   #          TEDS.append(TED)
+        #euclideanDistance
+        TEDS=[]
+        for rec in finalrecs:
+            TED = 0
+            for feature in featuresList:
+                diff = (rec['audioFeatures'][feature]*100)-(song['audioFeatures'][feature]*100)
+                TED += diff * diff
+            rec["TED"] = TED
+            TEDS.append(TED)
 
-   #      index_min_TED = TEDS.index(min(TEDS))
-   #      recs.append(finalrecs[index_min_TED])
-   #      recids.append(finalrecs[index_min_TED]['trackId'])
-   #      recids = list(set(recids))
-   #      #targets.append(target)
+        index_min_TED = TEDS.index(min(TEDS))
+        recs.append(finalrecs[index_min_TED])
+        ##ENSURE SONG NOT DUPED
+        #choice = finalrecs[index_min_TED]['trackId']
+        recids.append(finalrecs[index_min_TED]['trackId'])
+        recids = list(set(recids))
+        #targets.append(target)
 
-   #      ##ENSURE SONG NOT DUPED
+        
 
-   #  c1 = create(access_token)
-   #  response2 = c1.newPlaylist(userName, "+| TEST SET |+","N/A")
-   #  r2 = response2['uri']
-   #  fields = r2.split(":")
-   #  plid = fields[2]
-   #  uriList=[]
-   #  for item in recids:
-   #      uriList.append("spotify:track:{}".format(item))
-   #  if len(uriList)>0:
-   #      n = 50 #spotify playlist addition limit
-   #      for j in range(0, len(uriList), n):  
-   #          listToSend = uriList[j:j + n]
-   #          stringList = ",".join(listToSend)
-   #          response3 = c1.addSongs(plid, stringList)
+    c1 = create(access_token)
+    response2 = c1.newPlaylist(userName, "+| TEST SET |+","N/A")
+    r2 = response2['uri']
+    fields = r2.split(":")
+    plid = fields[2]
+    uriList=[]
+    for item in recids:
+        uriList.append("spotify:track:{}".format(item))
+    if len(uriList)>0:
+        n = 50 #spotify playlist addition limit
+        for j in range(0, len(uriList), n):  
+            listToSend = uriList[j:j + n]
+            stringList = ",".join(listToSend)
+            response3 = c1.addSongs(plid, stringList)
 
+    print('DONE')
+    input()
 
-   #  input()
-
-   # ################################################################ 
-   #  #sort by minimum euclidean distance from coordinates of curve
-   #  #get recomendations from first chosen song
-   #  #as we move forward in the set, trailing 5 songs as seeds
+   ################################################################ 
+    #sort by minimum euclidean distance from coordinates of curve
+    #get recomendations from first chosen song
+    #as we move forward in the set, trailing 5 songs as seeds
 
 
    #  #print(d.getMyTop(topType='tracks', term='long_term'))    
 
     
     ################################################################
-    # WORKING CLUSTER SECTION)
+    # WORKING CLUSTER SECTION
 
     #set up kmeans, check how many songs
     if len(masterSongList)<5:

@@ -455,14 +455,22 @@ class data:
         return idlist
         #the response_data['next'] field provides the endpoint to hit for next 50 songs
         
-    def getMyTop(self, topType, term ,limit):
+    def getMyTop(self, topType, term, limit):
 
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         api_endpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
         response = requests.get(api_endpoint, headers=authorization_header)
         response_data = json.loads(response.text) 
 
-        return response_data
+        cleaned_data = []
+        for artist in response_data['items']:
+            clean = {}
+            clean['artist_id'] = artist['id']
+            clean['genres'] = artist['genres']
+            cleaned_data.append(clean)
+
+
+        return cleaned_data
    
     def getTop50(self):
 
