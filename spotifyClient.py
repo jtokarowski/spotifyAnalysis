@@ -463,12 +463,17 @@ class data:
         response_data = json.loads(response.text) 
 
         cleaned_data = []
-        for artist in response_data['items']:
-            clean = {}
-            clean['artist_id'] = artist['id']
-            clean['genres'] = artist['genres']
-            cleaned_data.append(clean)
-
+        if topType == 'tracks':
+            for track in response_data['items']:
+                clean = {}
+                clean['track_id'] = track['id']
+                cleaned_data.append(clean)
+        else:
+            for artist in response_data['items']:
+                clean = {}
+                clean['artist_id'] = artist['id']
+                clean['genres'] = artist['genres']
+                cleaned_data.append(clean)
 
         return cleaned_data
    
@@ -524,3 +529,44 @@ class data:
         print(response_data['seeds'])
 
         return output
+
+    def search(self,name, artist,searchType, limit=None):
+
+        #could overlay simple ML here to find best match to our track
+        #eventually want to feed in artists separate from track name
+        #for now, list of keywords (artist, songname) shoudl be ok
+
+        #could add flexibility to search for differen things, for now just track
+
+        #q=album:gold%20artist:abba&type=album
+        #track_str = 'Henry Dark - Beirut'
+        #need to encode the keywords
+
+        if not limit:
+            limit = 1
+
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+
+        api_endpoint = "{}/search?q={}+artist:{}&type={}&limit={}&market=US".format(SPOTIFY_API_URL,name,artist,searchType,limit)
+        response = requests.get(api_endpoint, headers=authorization_header)
+        if response.status_code ==429:
+            try:
+                time.sleep(response.headers['Retry-After'])
+            except:
+                time.sleep(10)
+            
+            response = requests.get(api_endpoint, headers=authorization_header)
+
+        try:
+            response_data = json.loads(response.text) 
+        except:
+            response_data = None
+
+        return response_data
+
+
+
+
+
+
+
