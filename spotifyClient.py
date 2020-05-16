@@ -21,7 +21,11 @@ API_VERSION = "v1"
 SPOTIFY_API_URL = "{}/{}".format(SPOTIFY_API_BASE_URL, API_VERSION)
 
 # Server-side Parameters
-CLIENT_SIDE_URL = "http://127.0.0.1"
+if ENV == 'dev':
+    CLIENT_SIDE_URL = "http://127.0.0.1"
+elif ENV == 'heroku':
+    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com/"
+    
 PORT = 8000
 REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
