@@ -6,18 +6,11 @@ import time
 from datetime import date
 import os
 
-# #import dev keys
-# with open('config.json') as json_data_file:
-#     configData = json.load(json_data_file)
 
-# #grab the secret variables
-# CLIENT_ID = configData["spotify"]["cid"]
-# CLIENT_SECRET = configData["spotify"]["secret"]
-#import keys from environment
-CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
-CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
-print(CLIENT_ID)
-print(CLIENT_SECRET)
+# #import keys from environment
+    CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
+    CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
+    ENV = os.environ.get('ENV')
 
 
 #URLS
