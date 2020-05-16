@@ -10,7 +10,6 @@ from wtforms import widgets, SelectMultipleField
 import itertools
 from collections import Counter
 from operator import itemgetter
-from pymongo import MongoClient
 import time
 
 SECRET_KEY = 'development'
@@ -50,12 +49,16 @@ def authed():
             # if plalyist['owner'] == 'Spotify':
             #     discURI = plalyist['uri']
 
+    #refresh token AQDbDZC5tR4z0yeUhdNmdMEF0AF0PwHnMmHk4U4JQlA56SnJVn9lnxNSPcKyd8puzctCtptsYVF9835ptfD314nEY01G9_D2HiCajzRW5Qm7vkUTHZAAZi_i-5NUNMKMEH0
+    #discovery weekly 2020 spotify:playlist:5VhyW1OgZrRACjgIbLbtIs
+    #discover weekly spotify:playlist:37i9dQZEVXcHYX9cf8IcTf
 
     #grab the tokens from the URL
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer" #always bearer, don't need to grab this each request
     expires_in = request.args["expires_in"]
+
 
     a = auth()
     d = data(access_token)
@@ -124,7 +127,7 @@ def analysis():
     prof = d.profile()
     userName = prof.get("userName")
 
-    #retrieve songs and analysis for user selected playlistsDB
+    #retrieve songs and analysis for user selected playlists
     masterSongList=[]
     for i in range(len(unpackedData)):
         songs = d.getPlaylistTracks(unpackedData[i])

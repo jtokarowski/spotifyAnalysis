@@ -4,14 +4,21 @@ import requests
 import json
 import time
 from datetime import date
+import os
 
-#import dev keys
-with open('config.json') as json_data_file:
-    configData = json.load(json_data_file)
+# #import dev keys
+# with open('config.json') as json_data_file:
+#     configData = json.load(json_data_file)
 
-#grab the secret variables
-CLIENT_ID = configData["spotify"]["cid"]
-CLIENT_SECRET = configData["spotify"]["secret"]
+# #grab the secret variables
+# CLIENT_ID = configData["spotify"]["cid"]
+# CLIENT_SECRET = configData["spotify"]["secret"]
+#import keys from environment
+CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
+CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+print(CLIENT_ID)
+print(CLIENT_SECRET)
+
 
 #URLS
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -91,7 +98,7 @@ class auth:
         
         return newPage
 
-    def get_refreshToken(self, refresh_token):
+    def refreshAccessToken(self, refresh_token):
         
         #Auth Step 4: get new token with the refresh token
         refresh_payload = {
@@ -113,8 +120,8 @@ class auth:
         refreshed_expires_in = refreshed_response_data["expires_in"]
 
         refreshed_parameters = {
-        "refreshed_access_token": refreshed_access_token,
-        "refreshed_refresh_token": refreshed_refresh_token,
+        "access_token": refreshed_access_token,
+        "refresh_token": refreshed_refresh_token,
         "expires_in": refreshed_expires_in,
         }
 
@@ -140,6 +147,8 @@ class create:
         return response_data
 
     def addSongs(self, plid, uriList):
+        if type(uriList) == list:
+            uriList = ",".join(uriList)
 
         user_playlist_endpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, plid,uriList)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
@@ -237,14 +246,27 @@ class data:
 
     def getTracks(self, songs):
 
-        ids = ",".join(songs)
-
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,ids)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
 
-        return response_data
+        output = []
+
+        #API limit is 50 ids per call
+        n = 25
+        for i in range(0, len(songs), n):  
+            listToSend = songs[i:i + n]
+            ids = ",".join(listToSend)
+            print(len(listToSend))
+
+            api_endpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,ids)
+            response = requests.get(api_endpoint, headers=authorization_header)
+            response_data = json.loads(response.text) 
+            try:
+                output.extend(response_data['tracks'])
+            except:
+                print(response_data)
+                input()
+
+        return output
 
     def trackFeatures(self, songs):
 
@@ -254,8 +276,11 @@ class data:
         artistIdList = [] #list of artist ids to send for genre
         
         for song in songs: #within playlist
+
             songList.append(song)
-            if song['trackId'] == None:
+            if song == None:
+                uriList.append('None')
+            elif song['trackId'] == None:
                 uriList.append('None')
             else:
                 uriList.append(song['trackId'])
@@ -288,6 +313,8 @@ class data:
 
         for k in range(len(songList)):
             currentSong = songList[k]
+            if currentSong ==None:
+                continue
             currentSong['audioFeatures'] = allFeaturesList[k]
             if len(currentSong['artistIds'])>1:
                 currentSong['genres'] = []
@@ -336,9 +363,11 @@ class data:
         #get tracks for 1 playlist
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        uri = uri
-        fields = uri.split(':')
-        plid = fields[2]
+        if ":" in uri:
+            fields = uri.split(':')
+            plid = fields[2]
+        else:
+            plid = uri
 
         #set blank list for all songs in playlist
         songDataClean = []
@@ -376,6 +405,9 @@ class data:
 
     def cleanSongData(self, song):
     #reformats song information to drop unecessary data
+        
+        if song == None:
+            return None
 
         songInfo = {} 
         try:
