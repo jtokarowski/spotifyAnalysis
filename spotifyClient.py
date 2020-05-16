@@ -8,9 +8,9 @@ import os
 
 
 # #import keys from environment
-    CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
-    CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
-    ENV = os.environ.get('ENV')
+CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
+CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
+ENV = os.environ.get('ENV')
 
 
 #URLS
