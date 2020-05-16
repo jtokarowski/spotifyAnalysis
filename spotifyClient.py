@@ -30,15 +30,14 @@ if ENV == 'dev':
     PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
     PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
-    PORT = os.environ.get('PORT')
     CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com"
-    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
-    AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
-    REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
-    ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
-    PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
-    PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
-    PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
+    REDIRECT_URI = "{}/callback/q".format(CLIENT_SIDE_URL)
+    AUTHED_URL = "{}/authed".format(CLIENT_SIDE_URL)
+    REFRESH_URL = "{}/refresh".format(CLIENT_SIDE_URL)
+    ANALYSIS_URL = "{}/analysis".format(CLIENT_SIDE_URL)
+    PLAYLISTS_URL = "{}/playlists".format(CLIENT_SIDE_URL)
+    PLAYLIST_TRACKS_URL = "{}/playlistTracks".format(CLIENT_SIDE_URL)
+    PLAYLIST_TRACK_FEATURES_URL = "{}/playlistTrackFeatures".format(CLIENT_SIDE_URL)
 
 
 SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"

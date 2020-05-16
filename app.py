@@ -34,8 +34,7 @@ if ENV == 'dev':
     REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
     CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com"
-    PORT = os.environ.get('PORT')
-    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
+    REDIRECT_URI = "{}/callback/q".format(CLIENT_SIDE_URL)
 
 @app.route("/")
 def index():
@@ -381,4 +380,7 @@ def refresh():
     return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
     
 if __name__ == "__main__":
-    app.run(debug=True, port=PORT)
+    if ENV == 'heroku':
+        app.run(debug=False)#, port=PORT)
+    else:
+        app.run(debug=True, port=PORT)
