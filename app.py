@@ -30,10 +30,12 @@ app.config.from_object(__name__)
 # Server-side Parameters
 if ENV == 'dev':
     CLIENT_SIDE_URL = "http://127.0.0.1"
-    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
     PORT = 8000
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
-    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com/"
+    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com"
+    PORT = os.environ.get('PORT')
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
 
 @app.route("/")
 def index():

@@ -6,12 +6,10 @@ import time
 from datetime import date
 import os
 
-
-# #import keys from environment
+#import keys from environment
 CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
 CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
 ENV = os.environ.get('ENV')
-
 
 #URLS
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -23,8 +21,8 @@ SPOTIFY_API_URL = "{}/{}".format(SPOTIFY_API_BASE_URL, API_VERSION)
 # Server-side Parameters
 if ENV == 'dev':
     CLIENT_SIDE_URL = "http://127.0.0.1"
-    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
     PORT = 8000
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
     AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
     REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
     ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
@@ -32,11 +30,15 @@ if ENV == 'dev':
     PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
     PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
-    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com/"
-    REDIRECT_URI = "{}/callback/q".format(CLIENT_SIDE_URL)
-    AUTHED_URL = "{}/authed".format(CLIENT_SIDE_URL)
-    REFRESH_URL = "{}/refresh".format(CLIENT_SIDE_URL)
-    ANALYSIS_URL = "{}/analysis".format(CLIENT_SIDE_URL)
+    PORT = os.environ.get('PORT')
+    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com"
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
+    AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
+    REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
+    ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
+    PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
+    PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
+    PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
 
 
 SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"
