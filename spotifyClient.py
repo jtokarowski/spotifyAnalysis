@@ -23,17 +23,22 @@ SPOTIFY_API_URL = "{}/{}".format(SPOTIFY_API_BASE_URL, API_VERSION)
 # Server-side Parameters
 if ENV == 'dev':
     CLIENT_SIDE_URL = "http://127.0.0.1"
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
+    PORT = 8000
+    AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
+    REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
+    ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
+    PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
+    PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
+    PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
     CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com/"
-    
-PORT = 8000
-REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
-AUTHED_URL = "{}:{}/authed".format(CLIENT_SIDE_URL, PORT)
-REFRESH_URL = "{}:{}/refresh".format(CLIENT_SIDE_URL, PORT)
-ANALYSIS_URL = "{}:{}/analysis".format(CLIENT_SIDE_URL, PORT)
-PLAYLISTS_URL = "{}:{}/playlists".format(CLIENT_SIDE_URL, PORT)
-PLAYLIST_TRACKS_URL = "{}:{}/playlistTracks".format(CLIENT_SIDE_URL, PORT)
-PLAYLIST_TRACK_FEATURES_URL = "{}:{}/playlistTrackFeatures".format(CLIENT_SIDE_URL, PORT)
+    REDIRECT_URI = "{}/callback/q".format(CLIENT_SIDE_URL)
+    AUTHED_URL = "{}/authed".format(CLIENT_SIDE_URL)
+    REFRESH_URL = "{}/refresh".format(CLIENT_SIDE_URL)
+    ANALYSIS_URL = "{}/analysis".format(CLIENT_SIDE_URL)
+
+
 SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"
 STATE = "" #Should create a random string generator here to make a new state for each request
 

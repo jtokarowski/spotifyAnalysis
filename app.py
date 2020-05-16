@@ -11,8 +11,11 @@ import itertools
 from collections import Counter
 from operator import itemgetter
 import time
+import os
 
 SECRET_KEY = 'development'
+
+ENV = os.environ.get('ENV')
 
 #grab date program is being run
 td = date.today()
@@ -25,8 +28,12 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 
 # Server-side Parameters
-CLIENT_SIDE_URL = "http://127.0.0.1"
-PORT = 8000
+if ENV == 'dev':
+    CLIENT_SIDE_URL = "http://127.0.0.1"
+    REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
+    PORT = 8000
+elif ENV == 'heroku':
+    CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com/"
 
 @app.route("/")
 def index():
