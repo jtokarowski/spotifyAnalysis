@@ -282,6 +282,8 @@ class data:
 
     def trackFeatures(self, songs):
 
+        apiLimit = 50
+
         d1 = data(self.access_token)
         songList = [] #new tracklist for each playlist
         uriList = [] #list for URIs to send to retrieval
@@ -343,10 +345,10 @@ class data:
     #get audio features for 1 or more tracks (max of 100)
 
         if uri == None:
-            return
+            return "Error no URI provided"
         
         elif len(uri) ==0:
-            return
+            return "Error no URI provided"
 
         elif len(uri) == 1:
             uri = uri[0]
@@ -394,7 +396,7 @@ class data:
 
         ###improve efficiency here      
         for i in range(len(data)):
-            songDataClean.append(self.cleanSongData(data[i]))
+            songDataClean.append(self.cleanTrackData(data[i]))
 
         #catch the api limit error
         songCount = response_data['total']
@@ -411,11 +413,11 @@ class data:
                 data = response_data['items']     
 
                 for k in range(len(data)):
-                    songDataClean.append(self.cleanSongData(data[k]))  
+                    songDataClean.append(self.cleanTrackData(data[k]))  
             
         return songDataClean
 
-    def cleanSongData(self, song):
+    def cleanTrackData(self, song):
     #reformats song information to drop unecessary data
         
         if song == None:
@@ -568,7 +570,7 @@ class data:
 
         output = []
         for song in response_data['tracks']:
-            output.append(self.cleanSongData(song))
+            output.append(self.cleanTrackData(song))
 
         print(response_data['seeds'])
 
@@ -607,10 +609,34 @@ class data:
             response_data = None
 
         return response_data
+    
+    def getArtistData(self, artistID):
+        #https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
+    
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
+        if isinstance(artistID, list):
+            if len(artistID)>1:
+                artistIDString = ",".join(artistID)
+            else:
+                artistIDString = artistID[0] #1 element list
+        else:
+            artistIDString = artistID
+        
+        apiEndpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistIDString)
+        artistsResponse = requests.get(apiEndpoint, headers=authorizationHeader)  
+                
+        if artistsResponse.status_code != 200:
+            return "API Error {}".format(artistsResponse.status_code)
+        else:
+            responseData = json.loads(artistsResponse.text)
 
+        return responseData['artists']
 
+    def extractGenres(self, artistData):
+        #extract genres from single artist retrieved or list of artists
+        genresByArtist = {}
+        for artist in artistData:
+            genresByArtist[artist['id']] = artist['genres']
 
-
-
-
+        return genresByArtist #dict by ID
