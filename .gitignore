@@ -1,2 +1,3 @@
 #this will block the commit of the config file
 config.json
+discover_weekly_backup.py

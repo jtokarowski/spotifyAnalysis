@@ -13,7 +13,7 @@ from operator import itemgetter
 import time
 import os
 
-SECRET_KEY = 'development'
+#SECRET_KEY = 'development'
 
 ENV = os.environ.get('ENV')
 
