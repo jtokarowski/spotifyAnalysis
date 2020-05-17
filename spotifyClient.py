@@ -258,27 +258,31 @@ class data:
 
         return playlists
 
-    def getTracks(self, songs):
+    def getTracks(self, trackIds):
+        #https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
+        apiLimit = 50
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        if not isinstance(trackIds, list):
+            trackIds = [trackIds]
 
-        output = []
-        #API limit is 50 ids per call
-        n = 25
-        for i in range(0, len(songs), n):  
-            listToSend = songs[i:i + n]
-            ids = ",".join(listToSend)
+        #define output
+        outputTrackData = []
+        
+        for i in range(0, len(trackIds), apiLimit):  
+            selectedTrackIds = trackIds[i:i + apiLimit]
+            selectedTrackIdsString = ",".join(selectedTrackIds)
 
-            api_endpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,ids)
-            response = requests.get(api_endpoint, headers=authorization_header)
-            response_data = json.loads(response.text) 
+            apiEndpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,selectedTrackIdsString)
+            tracksResponse = requests.get(apiEndpoint, headers=authorizationHeader) 
+            
+            if tracksResponse.status_code != 200:
+                return "API Error {}".format(tracksResponse.status_code)
+            else:
+                responseData = json.loads(tracksResponse.text)
+                outputTrackData.extend(responseData['tracks'])
 
-            try:
-                output.extend(response_data['tracks'])
-            except:
-                print(response_data)
-
-        return output
+        return outputTrackData
 
     def trackFeatures(self, songs):
 
@@ -343,6 +347,7 @@ class data:
 
     def getTrackFeatures(self, uri):
     #get audio features for 1 or more tracks (max of 100)
+    #https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-audio-features/
 
         if uri == None:
             return "Error no URI provided"
@@ -417,40 +422,34 @@ class data:
             
         return songDataClean
 
-    def cleanTrackData(self, song):
-    #reformats song information to drop unecessary data
-        
-        if song == None:
-            return None
+    def cleanTrackData(self, rawTracks):
+    #reformats track information to drop unecessary data
+        if rawTracks == None or len(rawTracks) == 0:
+            return "Error: no track provided"
+    
+        elif not isinstance(rawTracks, list):
+            rawTracks = [rawTracks]
 
-        songInfo = {} 
-        try:
-            trackId = song['track']['id']
-            name = song['track']['name']
-            artistList = song['track']['artists']
-        except:
-            trackId = song['id']
-            name = song['name']
-            artistList = song['artists']
-        
-        name = name.title()
-        trackName = name.replace(" ", "")
+        cleanTracks= []
 
-        songInfo['trackName'] = trackName
-        songInfo['trackId'] = trackId
+        for track in rawTracks:
+            cleanTrackData = {} 
+            cleanTrackData['trackName'] = track['name'].title()
+            cleanTrackData['trackID'] = track['id']
+            
+            artistNameList = []
+            artistIdList = []
+            for artist in track['artists']:
+                artistNameList.append(artist['name'])
+                artistIdList.append(artist['id'])
+                
+            cleanTrackData['artistNames'] = artistNameList
+            cleanTrackData['artistIDs'] = artistIdList
+            cleanTrackData['isClean'] = True
 
+            cleanTracks.append(cleanTrackData)
         
-        artistNameList = []
-        artistIdList = []
-        for i in range(len(artistList)):
-            artistName = artistList[i]['name']
-            artistNameList.append(artistName)
-            artistId = artistList[i]['id']
-            artistIdList.append(artistId)
-        songInfo['artistNames'] = artistNameList
-        songInfo['artistIds'] = artistIdList
-        
-        return songInfo
+        return cleanTracks
 
     def getGenreSeeds(self):
 
@@ -462,30 +461,30 @@ class data:
 
         return response_data['genres']
 
-    def getArtistGenres(self, artistids):
+    # def getArtistGenres(self, artistids):
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+    #     authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        if isinstance(artistids, list):
-            if len(artistids)>1:
-                genres = []
-                #turn the list into comma separated string
-                commaSep_artistids = ",".join(artistids)
-                api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, commaSep_artistids)
-                response = requests.get(api_endpoint, headers=authorization_header)
-                response_data = json.loads(response.text) 
-                for i in range(len(artistids)):
-                    genres.append(response_data['artists'][i]['genres'])
+    #     if isinstance(artistids, list):
+    #         if len(artistids)>1:
+    #             genres = []
+    #             #turn the list into comma separated string
+    #             commaSep_artistids = ",".join(artistids)
+    #             api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, commaSep_artistids)
+    #             response = requests.get(api_endpoint, headers=authorization_header)
+    #             response_data = json.loads(response.text) 
+    #             for i in range(len(artistids)):
+    #                 genres.append(response_data['artists'][i]['genres'])
             
-                return genres
+    #             return genres
 
-        api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids[0])
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
+    #     api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids[0])
+    #     response = requests.get(api_endpoint, headers=authorization_header)
+    #     response_data = json.loads(response.text) 
 
-        genres = response_data['artists'][0]['genres'] 
+    #     genres = response_data['artists'][0]['genres'] 
         
-        return genres
+    #     return genres
 
     def getRecentSongs(self):
 
@@ -610,28 +609,29 @@ class data:
 
         return response_data
     
-    def getArtistData(self, artistID):
+    def getArtistData(self, artistIDs):
         #https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
+        apiLimit = 50
+
+        if not isinstance(artistIDs, list):
+            artistIDs = [artistIDs]
     
         authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        if isinstance(artistID, list):
-            if len(artistID)>1:
-                artistIDString = ",".join(artistID)
-            else:
-                artistIDString = artistID[0] #1 element list
-        else:
-            artistIDString = artistID
         
-        apiEndpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistIDString)
-        artistsResponse = requests.get(apiEndpoint, headers=authorizationHeader)  
-                
-        if artistsResponse.status_code != 200:
-            return "API Error {}".format(artistsResponse.status_code)
-        else:
-            responseData = json.loads(artistsResponse.text)
+        artistData = []
 
-        return responseData['artists']
+        for i in range(0, len(artistIDs), apiLimit):
+            artistIDString = ",".join(artistIDs[i:i+apiLimit])
+            apiEndpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistIDString)
+            artistsResponse = requests.get(apiEndpoint, headers=authorizationHeader)  
+        
+            if artistsResponse.status_code != 200:
+                return "API Error {}".format(artistsResponse.status_code)
+            else:
+                responseData = json.loads(artistsResponse.text)
+                artistData.extend(responseData['artists'])
+
+        return artistData  
 
     def extractGenres(self, artistData):
         #extract genres from single artist retrieved or list of artists
@@ -640,3 +640,53 @@ class data:
             genresByArtist[artist['id']] = artist['genres']
 
         return genresByArtist #dict by ID
+    
+    def getAudioFeatures(self, incomingTracks):
+        #Must send this method clean track/s
+        #https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-audio-features/
+        apiLimit = 100
+
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        
+        artistIDs = []
+        trackIDs = []
+        
+        #convert to list
+        if not isinstance(incomingTracks, list):
+            incomingTracks = [incomingTracks]
+
+        #pull out relevant identifiers
+        for track in incomingTracks:
+            artistIDs.extend(track['artistIDs'])
+            trackIDs.append(track['trackID'])
+
+        #create dict of IDs and and genres
+        artistData = self.getArtistData(artistIDs)
+        genresByArtistID = self.extractGenres(artistData)
+
+        #define output + retrieve in blocks of 50 at a time
+        audioFeaturesData = []
+        for i in range(0, len(trackIDs), apiLimit):
+            selectedTrackIDs = trackIDs[i:i+apiLimit]
+            trackIDString = ",".join(selectedTrackIDs)
+            apiEndpoint = "{}/audio-features/?ids={}".format(SPOTIFY_API_URL, trackIDString)
+            audioFeaturesResponse = requests.get(apiEndpoint, headers=authorizationHeader)  
+        
+            if audioFeaturesResponse.status_code != 200:
+                return "API Error {}".format(audioFeaturesResponse.status_code)
+            else:
+                responseData = json.loads(audioFeaturesResponse.text)
+                
+                audioFeaturesData.extend(responseData['audio_features'])
+        
+        #reformat data for export
+        trackDataComplete = []
+        for j in range(len(incomingTracks)):
+            completeTrack = incomingTracks[j]
+            completeTrack['audioFeatures'] = audioFeaturesData[j]
+            completeTrack['genres'] = []
+            for artistID in completeTrack['artistIDs']:
+                completeTrack['genres'].extend(genresByArtistID[artistID]) 
+            trackDataComplete.append(completeTrack)
+
+        return trackDataComplete 

@@ -58,8 +58,9 @@ def authed():
     spotifyDataRetrieval = data(access_token)
     authorization = auth()
 
-    rawData = spotifyDataRetrieval.getArtistData(['1l2ekx5skC4gJH8djERwh1','0aF0pIALJDBCfFgqiTaK2g'])
-    print(spotifyDataRetrieval.extractGenres(rawData))
+    rawTrack = spotifyDataRetrieval.getTracks('3RWKoVWGXvMas3mn7tRRbI')
+    cleanTrack = spotifyDataRetrieval.cleanTrackData(rawTrack)
+    print(spotifyDataRetrieval.getAudioFeatures(cleanTrack))
     input()
 
     profile = spotifyDataRetrieval.profile()
