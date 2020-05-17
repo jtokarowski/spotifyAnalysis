@@ -18,7 +18,7 @@ class stats:
                 continue
 
             artistNames = song['artistNames']
-            artistIDs = song['artistIds']
+            artistIDs = song['artistIDs']
 
             if len(artistNames)==1:
                 song['artistNames'] =artistNames[0]
@@ -26,18 +26,15 @@ class stats:
                 song['artistNames'] = ",".join(artistNames)
 
             if len(artistIDs)==1:
-                song['artistIds'] = artistIDs[0]
+                song['artistIDs'] = artistIDs[0]
             else:
-                song['artistIds'] = ",".join(artistIDs)
+                song['artistIDs'] = ",".join(artistIDs)
 
             for key,val in songAudioFeatures.items():
                 song[str(key)] = val
 
             del song['audioFeatures']
-            del song['type']
             del song['id']
-            del song['track_href']
-            del song['analysis_url']
     
             dfReadySongs.append(song)
         
@@ -53,10 +50,10 @@ class stats:
         df["UBP"] = df["collection"].map(lambda x: 1 if "UpbeatPiano" in x else 0)
 
         x_train, x_test, y_train, y_test = train_test_split(df.drop('UBP',axis=1), df['UBP'], test_size=0.50, random_state=101)
-        x_trainMap = x_train[['trackId','artistIds','collection']]
-        x_testMap = x_test[['trackId','artistIds','collection']] 
-        x_train.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
-        x_test.drop(['trackId','artistIds','collection'],axis=1, inplace=True)
+        x_trainMap = x_train[['trackId','artistIDs','collection']]
+        x_testMap = x_test[['trackId','artistIdD','collection']] 
+        x_train.drop(['trackId','artistIDs','collection'],axis=1, inplace=True)
+        x_test.drop(['trackId','artistIdD','collection'],axis=1, inplace=True)
 
         #create an instance and fit the model 
         logmodel = LogisticRegression()
@@ -71,7 +68,7 @@ class stats:
 
     def removeDupes(self):
         X = self.df
-        X.drop_duplicates('trackId', inplace = True)
+        X.drop_duplicates('trackID', inplace = True)
         X.reset_index(inplace=True)
         self.df = X
 
@@ -84,7 +81,7 @@ class stats:
         X = self.df
 
         kmeans = KMeans(n_clusters=means, random_state=101,init='random')
-        Xlabels = X[['trackId']]
+        Xlabels = X[['trackID']]
         Xselect = X[featuresList]
         kmeans.fit(Xselect)
         y_kmeans = kmeans.predict(Xselect)

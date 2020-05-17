@@ -175,19 +175,18 @@ class data:
 
 
     def profile(self):
+        #https://developer.spotify.com/documentation/web-api/reference/users-profile/
         
         global userName
 
         user_profile_api_endpoint = "{}/me".format(SPOTIFY_API_URL)
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
         profile_response = requests.get(user_profile_api_endpoint, headers=authorization_header)
-        profile_data = json.loads(profile_response.text)
+        profileData = json.loads(profile_response.text)
 
-        uri = profile_data["uri"]
-        fields = uri.split(':')
-        userName = fields[2]
-        followers = profile_data["followers"]
-        images = profile_data["images"]
+        userName = self.URItoID(profileData["uri"])
+        followers = profileData["followers"]
+        images = profileData["images"]
 
         #strips username to avoid error if user is from FB and name has a space, or other weird char
         userName = str(userName)
@@ -202,61 +201,47 @@ class data:
             else:
                 newstr += char
 
-        response = {
+        userInfoClean = {
         "userName": userName,
         "images": images,
         "followers": followers
         }
 
-        return response
+        return userInfoClean
 
-    def userPlaylists(self):
+    def currentUserPlaylists(self):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/get-a-list-of-current-users-playlists/
 
-        userPlaylists = []
+        currentUserPlaylists = []
         
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
+        apiEndpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
         
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)
+        currentUserPlaylistsResponse = requests.get(apiEndpoint, headers=authorization_header)
+        responseData = json.loads(currentUserPlaylistsResponse.text)
+        currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
-        userPlaylists.extend(self.reformat_playlists(response_data))
-
-        playlistCount = response_data['total']
-        playlistCount2 = len(response_data['items'])
-
-        if playlistCount > playlistCount2:
-            #print('playlist limit exceeded')
-            runs = int(round(playlistCount/50)-1)
+        if responseData['total'] > len(responseData['items']):
+            runs = int(round(responseData['total']/50)-1)
             offset = 0
-            for m in range (runs):
+
+            for i in range(runs):
                 offset += 50
-                new_api_endpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
-                response = requests.get(new_api_endpoint, headers=authorization_header)
-                response_data2 = json.loads(response.text)
-                userPlaylists.extend(self.reformat_playlists(response_data2))
+                newApiEndpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
+                currentUserPlaylistsResponse = requests.get(newApiEndpoint, headers=authorization_header)
+                responseData = json.loads(currentUserPlaylistsResponse.text)
+                currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
+        return currentUserPlaylists
 
-        #results = collection.insert_many(userPlaylists)
+    def reformatPlaylists(self, rawPlaylists):
+        #cleans up playlists retrieved by currentUserPlaylists method
+        cleanPlaylists = []
 
-        return userPlaylists
+        for rawPlaylist in rawPlaylists['items']:
+            cleanPlaylists.append({"uri":rawPlaylist['uri'], "playlistName": rawPlaylist['name']})
 
-    def reformat_playlists(self, data):
-
-        playlists = []
-        playlistCount = data['total']
-        playlistCount2 = len(data['items'])
-
-        for i in range(playlistCount2): #retrieve up to limit worth of playlists
-            currentPlayList = data['items'][i]
-            playlistName = currentPlayList['name']
-            uri = currentPlayList['uri']
-            playlistName = playlistName.title()
-            playlistName = playlistName.replace(" ", "")
-            entry = {"uri":uri, "playlistName": playlistName}
-            playlists.append(entry)
-
-        return playlists
+        return cleanPlaylists
 
     def getTracks(self, trackIds):
         #https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
@@ -284,143 +269,54 @@ class data:
 
         return outputTrackData
 
-    def trackFeatures(self, songs):
-
-        apiLimit = 50
-
-        d1 = data(self.access_token)
-        songList = [] #new tracklist for each playlist
-        uriList = [] #list for URIs to send to retrieval
-        artistIdList = [] #list of artist ids to send for genre
-        
-        for song in songs: #within playlist
-
-            songList.append(song)
-            if song == None:
-                uriList.append('None')
-            elif song['trackId'] == None:
-                uriList.append('None')
-            else:
-                uriList.append(song['trackId'])
-                artistIdList.extend(song['artistIds'])
-
-        set_artistids = set(artistIdList)
-        unique_artistids = list(set_artistids)
-
-        #break up by spotify artist id limita
-        allGenresList = []
-        m = 50
-        for j in range(0, len(unique_artistids), m):  
-            listToSend = unique_artistids[j:j + m]
-            response = d1.getArtistGenres(listToSend)
-            allGenresList.extend(response)
-
-        #form dict from resulting lists
-        genremap = {}
-
-        for l in range(len(unique_artistids)):
-            genremap[unique_artistids[l]] = allGenresList[l]
-
-        # breaking up song ids by spotify limit
-        allFeaturesList = []
-        n = 100
-        for i in range(0, len(uriList), n):  
-            listToSend = uriList[i:i + n]
-            response = d1.getTrackFeatures(listToSend)
-            allFeaturesList.extend(response['audio_features'])    
-
-        for k in range(len(songList)):
-            currentSong = songList[k]
-            if currentSong ==None:
-                continue
-            currentSong['audioFeatures'] = allFeaturesList[k]
-            if len(currentSong['artistIds'])>1:
-                currentSong['genres'] = []
-                for z in range(len(currentSong['artistIds'])):
-                    g = genremap[currentSong['artistIds'][z]]
-                    currentSong['genres'].extend(g)
-            else:
-                currentSong['genres'] = genremap[currentSong['artistIds'][0]]
-
-        return songList
-        #return "done getting features for songs in " + str(collection)
-
-    def getTrackFeatures(self, uri):
-    #get audio features for 1 or more tracks (max of 100)
-    #https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-audio-features/
-
-        if uri == None:
-            return "Error no URI provided"
-        
-        elif len(uri) ==0:
-            return "Error no URI provided"
-
-        elif len(uri) == 1:
-            uri = uri[0]
+    
+    def getAudioAnalysis(self, trackURI):
+        #https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-analysis/
+        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        if ":" in trackURI:
+            trackID = self.URItoID(trackURI)
         else:
-            uri = ",".join(uri)
+            trackID = trackURI
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        api_endpoint = "{}/audio-features?ids={}".format(SPOTIFY_API_URL,uri)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)
+        api_endpoint = "{}/audio-analysis/{}".format(SPOTIFY_API_URL,trackID)
+        audioAnalysisResponse = requests.get(api_endpoint, headers=authorization_header)
+        response_data = json.loads(audioAnalysisResponse.text)
             
         return response_data
 
-    def getAudioAnalysis(self, uri):
-
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        api_endpoint = "{}/audio-analysis/{}".format(SPOTIFY_API_URL,uri)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)
-            
-        return response_data
-
-    def getPlaylistTracks(self, uri):
+    def getPlaylistTracks(self, playlistURI):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/get-playlists-tracks/
         #get tracks for 1 playlist
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        if ":" in uri:
-            fields = uri.split(':')
-            plid = fields[2]
+        if ":" in playlistURI:
+            playlistID = self.URItoID(playlistURI)
         else:
-            plid = uri
+            playlistID = playlistURI
 
         #set blank list for all songs in playlist
-        songDataClean = []
+        playlistTracks = []
 
         #get songs in playlist from API
-        api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, plid)
-        response = requests.get(api_endpoint, headers=authorization_header)
+        api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotal&limit=100".format(SPOTIFY_API_URL, userName, playlistID)
+        playlistTracksResponse = requests.get(api_endpoint, headers=authorization_header)
 
         #unpack response
-        response_data = json.loads(response.text)
-        data = response_data['items'] #this is a list of dicts  
-
-        ###improve efficiency here      
-        for i in range(len(data)):
-            songDataClean.append(self.cleanTrackData(data[i]))
+        playlistTracksResponseData = json.loads(playlistTracksResponse.text)
+        playlistTracks = playlistTracksResponseData['items'] #this is a list of dicts  
 
         #catch the api limit error
-        songCount = response_data['total']
-        songCount2 = len(response_data['items'])
         offset = 0
-
-        if songCount > songCount2:
-            runs = int(round(songCount/100)-1)
+        if playlistTracksResponseData['total'] > len(playlistTracksResponseData['items']):
+            runs = int(round(playlistTracksResponseData['total']/100)-1)
             for j in range (runs):
                 offset += 100
-                api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, plid, offset)
-                response = requests.get(api_endpoint, headers=authorization_header)
-                response_data = json.loads(response.text)
-                data = response_data['items']     
+                api_endpoint = "{}/users/{}/playlists/{}/tracks?market=US&fields=items(track(id%2C%20name%2C%20artists))%2Ctotallimit=100&offset={}".format(SPOTIFY_API_URL, userName, playlistID, offset)
+                playlistTracksResponse = requests.get(api_endpoint, headers=authorization_header)
+                playlistTracksResponseData = json.loads(playlistTracksResponse.text)
+                playlistTracks.extend(playlistTracksResponseData['items'])
 
-                for k in range(len(data)):
-                    songDataClean.append(self.cleanTrackData(data[k]))  
-            
-        return songDataClean
+        return playlistTracks
 
     def cleanTrackData(self, rawTracks):
     #reformats track information to drop unecessary data
@@ -434,12 +330,12 @@ class data:
 
         for track in rawTracks:
             cleanTrackData = {} 
-            cleanTrackData['trackName'] = track['name'].title()
-            cleanTrackData['trackID'] = track['id']
+            cleanTrackData['trackName'] = track['track']['name'].title()
+            cleanTrackData['trackID'] = track['track']['id']
             
             artistNameList = []
             artistIdList = []
-            for artist in track['artists']:
+            for artist in track['track']['artists']:
                 artistNameList.append(artist['name'])
                 artistIdList.append(artist['id'])
                 
@@ -690,3 +586,5 @@ class data:
             trackDataComplete.append(completeTrack)
 
         return trackDataComplete 
+
+        
