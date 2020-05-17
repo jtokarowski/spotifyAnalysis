@@ -68,14 +68,13 @@ def authed():
         imgurl = image[0]['url']
         
     #build the link for each playlist
-    allUserPLaylists = spotifyDataRetrieval.userPlaylists()
+    allUserPLaylists = spotifyDataRetrieval.currentUserPlaylists()
     checkboxData = []
     for playlist in allUserPLaylists:
         checkboxFormatPlaylist = (playlist['uri'],playlist['playlistName'])
         checkboxData.append(checkboxFormatPlaylist)
 
     #set up the checkbox classes
-    
     class MultiCheckboxField(SelectMultipleField):
         widget = widgets.ListWidget(prefix_label=False)
         option_widget = widgets.CheckboxInput()
@@ -111,34 +110,34 @@ def analysis():
     token_type = "Bearer"
     spotifyDataRetrieval = data(access_token)
 
+
+    ################################################################
+    ###               CLUSTER SECTION                            ###
+    ################################################################
+
     #raw data from the checklist (a list of playlist URIs specifically)
     pldata = request.args["data"]
     unpackedData = pldata.split(",")
-
     
     profile = spotifyDataRetrieval.profile()
     userName = profile.get("userName")
 
-    #retrieve songs and analysis for user selected playlists
-    masterSongList=[]
+    #retrieve songs and audio features for user selected playlists
+    masterTrackList=[]
     for i in range(len(unpackedData)):
-        songs = spotifyDataRetrieval.getPlaylistTracks(unpackedData[i])
-        masterSongList.extend(songs)
+        tracks = spotifyDataRetrieval.getPlaylistTracks(unpackedData[i])
+        masterTrackList.extend(tracks)
 
-    masterSongListWithFeatures = spotifyDataRetrieval.trackFeatures(masterSongList)
-    
-    ################################################################
-    ###               WORKING CLUSTER SECTION                    ###
-    ################################################################
+    cleanedMasterTrackList = spotifyDataRetrieval.cleanTrackData(masterTrackList)
+    masterTrackListWithFeatures = spotifyDataRetrieval.getAudioFeatures(cleanedMasterTrackList)
 
     #set up kmeans, check how many songs
-    if len(masterSongListWithFeatures)<5:
-        clusters = len(masterSongListWithFeatures)
+    if len(masterTrackListWithFeatures)<5:
+        clusters = len(masterTrackListWithFeatures)
     else:
         clusters = 5
 
-    
-    statistics = stats(masterSongListWithFeatures)
+    statistics = stats(masterTrackListWithFeatures)
     statistics.kMeans(spotifyAudioFeatures, clusters)
     dataframeWithClusters = statistics.df
     clusterCenterCoordinates = statistics.centers
@@ -149,12 +148,9 @@ def analysis():
     for i in range(clusters):
         descript = ""
         selectedClusterCenter = clusterCenterCoordinates[i]
-        
-        targets = {}
         for j in range(len(spotifyAudioFeatures)):
             entry = str(" "+str(spotifyAudioFeatures[j])+":"+str(round(selectedClusterCenter[j],3))+" ")
             descript += entry
-
             #we can return less detail here, maybe 'highly danceable' is sufficient
 
         descript +=" created on {}".format(NICEDATE)
@@ -193,7 +189,7 @@ def analysis():
         newPlaylistID = spotifyDataRetrieval.URItoID(newPlaylistInfo['uri'])
 
 
-        dataframeFilteredToSingleCluster = dataframeFilteredToSingleCluster['trackId']
+        dataframeFilteredToSingleCluster = dataframeFilteredToSingleCluster['trackID']
         newPlaylistTracksIDList = dataframeFilteredToSingleCluster.values.tolist()
 
         outputPlaylistTracks=[]
@@ -219,73 +215,34 @@ def analysis():
     #targets[key2] = center[j]-0.2
     #targets[key3] = center[j]+0.2
 
-    # topType = 'artists'
+    # topListenType = 'artists'
+    # userTopList = []
+    # userTopList.extend(spotifyDataRetrieval.getMyTop(topType=topListenType, term='short_term', limit=10))
+    # userTopList.extend(spotifyDataRetrieval.getMyTop(topType=topListenType, term='medium_term', limit=10))
+    # userTopList.extend(spotifyDataRetrieval.getMyTop(topType=topListenType, term='long_term', limit=10))
 
-    # stTop = d.getMyTop(topType=topType, term='short_term', limit=10)
-    # mtTop = d.getMyTop(topType=topType, term='medium_term', limit=10)
-    # ltTop = d.getMyTop(topType=topType, term='long_term', limit=10)
-
-    # #check which top type we got
-    # top_items = []
-    # top_items.extend(stTop)
-    # top_items.extend(mtTop)
-    # top_items.extend(ltTop)
-
-    # item_ids = []
-    # for top_item in top_items:
-    #     if topType=='tracks':
-    #         item_ids.append(top_item['track_id'])
+    # itemIDs = []
+    # for topItem in userTopList:
+    #     if topListenType=='tracks':
+    #         itemIDs.append(topItem['track_id'])
     #     else:
-    #         item_ids.append(top_item['artist_id'])
+    #         itemIDs.append(topItem['artist_id'])
 
     # #remove dupes
-    # item_ids = list(set(item_ids))
-
-    # test_target_1 = { 
-    # "target_danceability": 1,
-    # "target_energy": 1,
-    # "target_speechiness": 1,
-    # "target_acousticness": 1,
-    # "target_instrumentalness": 1,
-    # "target_liveness": 1,
-    # "target_valence": 1,
-    # "target_key":0
-    # }
-    # test_target_2 = { 
-    # "target_danceability": 0,
-    # "target_energy": 0,
-    # "target_speechiness": 0,
-    # "target_acousticness": 0,
-    # "target_instrumentalness": 0,
-    # "target_liveness": 0,
-    # "target_valence": 0,
-    # "target_key":0
-    # }
-
+    # itemIDs = list(set(itemIDs))
 
     # ## Build up a large pool of options by grabbing suggestions for each
     # ## of top artists, target 0 and target 1 to get almost all of pool
-    # masterpool = []
-    # for i in range(len(item_ids)):  
-    #     #listToSend = topArtistIds[i:i + m]
-    #     #stringList = ",".join(listToSend)
-    #     recommendations = d.getRecommendations(limit=100, seed_artists=item_ids[i],targets=test_target_1)
-    #     recommendations2 = d.getRecommendations(limit=100, seed_artists=item_ids[i],targets=test_target_2)
-    #     masterpool.extend(recommendations)
-    #     masterpool.extend(recommendations2)
-
-    # deletions = []
-    # master_rec_ids = []
-    # for j in range(len(masterpool)):
-    #     if masterpool[j]['trackId'] in master_rec_ids:
-    #         deletions.append(j)
-    #     else:
-    #         master_rec_ids.append(masterpool[j]['trackId'])
-
-    # for k in reversed(deletions):
-    #     del masterpool[k]
-
-    # finalrecs = d.trackFeatures(masterpool)
+    # masterTrackPool = []
+    # masterTrackPoolIDList = []
+    # for spotifyID in itemIDs:  
+    #     recommendedTracks = spotifyDataRetrieval.getRecommendations(limit=100, seed_artists=spotifyID)
+    #     for track in recommendedTracks:
+    #         if track['trackId'] not in masterTrackPoolIDList:
+    #             masterTrackPool.append(spotifyDataRetrieval.trackFeatures(track, isList=false))
+        
+    #         print(masterTrackPool)
+    #         input()
 
     # recs = []
     # recids = []
