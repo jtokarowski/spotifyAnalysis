@@ -70,7 +70,7 @@ class auth:
     def playlistsURL(self):
         return PLAYLISTS_URL
 
-    def analysisURL(self):
+    def visualizationURL(self):
         return ANALYSIS_URL
 
     def playlistTracksURL(self):
@@ -112,7 +112,6 @@ class auth:
         }
 
         post_request_refresh = requests.post(SPOTIFY_TOKEN_URL, data=refresh_payload)
-        print(post_request_refresh)
         refreshed_response_data = json.loads(post_request_refresh.text)
         refreshed_access_token = refreshed_response_data["access_token"]
         if refresh_token in refreshed_response_data: #sometimes it doesn't return new refresh token, catch this issue
@@ -162,6 +161,18 @@ class create:
 class data:
     def __init__(self, access_token):
         self.access_token = access_token
+
+    def idToURI(self, type, id):
+        if type not in ["playlist", "track", "artist"]:
+            return "Invalid type"
+        # set up the correct format
+        return "spotify:{}:{}".format(type, id)
+
+    def URItoID(self, URI):
+        #strip format to just the ID
+        splitURI = URI.split(":")
+        return splitURI[2]
+
 
     def profile(self):
         
@@ -252,22 +263,20 @@ class data:
         authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
 
         output = []
-
         #API limit is 50 ids per call
         n = 25
         for i in range(0, len(songs), n):  
             listToSend = songs[i:i + n]
             ids = ",".join(listToSend)
-            print(len(listToSend))
 
             api_endpoint = "{}/tracks?ids={}".format(SPOTIFY_API_URL,ids)
             response = requests.get(api_endpoint, headers=authorization_header)
             response_data = json.loads(response.text) 
+
             try:
                 output.extend(response_data['tracks'])
             except:
                 print(response_data)
-                input()
 
         return output
 

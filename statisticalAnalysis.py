@@ -8,31 +8,29 @@ from sklearn.metrics import confusion_matrix
 
 class stats:
 
-    def __init__(self, songs):
+    def __init__(self, rawSongs):
         
-        songsfinal = []
-        for song in songs:
+        dfReadySongs = []
+        for song in rawSongs:
 
-            doc = song['audioFeatures']
-            if doc==None:
+            songAudioFeatures = song['audioFeatures']
+            if songAudioFeatures == None:
                 continue
 
-            an = song['artistNames']
-            ai = song['artistIds']
+            artistNames = song['artistNames']
+            artistIDs = song['artistIds']
 
-            if len(an)==1:
-                song['artistNames'] = an[0]
+            if len(artistNames)==1:
+                song['artistNames'] =artistNames[0]
             else:
-                strList = ",".join(an)
-                song['artistNames'] = strList
+                song['artistNames'] = ",".join(artistNames)
 
-            if len(ai)==1:
-                song['artistIds'] = ai[0]
+            if len(artistIDs)==1:
+                song['artistIds'] = artistIDs[0]
             else:
-                strList = ",".join(ai)
-                song['artistIds'] = strList
+                song['artistIds'] = ",".join(artistIDs)
 
-            for key,val in doc.items():
+            for key,val in songAudioFeatures.items():
                 song[str(key)] = val
 
             del song['audioFeatures']
@@ -41,12 +39,11 @@ class stats:
             del song['track_href']
             del song['analysis_url']
     
-            songsfinal.append(song)
+            dfReadySongs.append(song)
         
         #convert songs to dataFrame
-        df = pd.read_json(json.dumps(songsfinal) , orient='records')
- 
-        self.df = df
+        dataframe = pd.read_json(json.dumps(dfReadySongs) , orient='records')
+        self.df = dataframe
 
     def logReg(self):
 
@@ -101,14 +98,6 @@ class stats:
         self.df = X
         self.centers = centers
         
-        #listofdicts = []
-        # i = 0
-        # for feature in featuresList:
-        #     centersdict[feature] = centers[i]
-        #     i+=1
-
-        # self.centersdicts.append = centersdict
-
         return
 
     def euclideanDistance(x, featuresList, centers):

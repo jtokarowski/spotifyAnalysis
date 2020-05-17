@@ -13,9 +13,8 @@ from operator import itemgetter
 import time
 import os
 
-#SECRET_KEY = 'development'
-
 ENV = os.environ.get('ENV')
+SECRET_KEY = ' ' #This doesn't actually get used, but simpleForm needs this to run
 
 #grab date program is being run
 td = date.today()
@@ -27,7 +26,7 @@ NICEDATE = td.strftime("%b %d %Y") ##MMM DD YYYY
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-# Server-side Parameters
+# Server-side Parameters based on where it's running
 if ENV == 'dev':
     CLIENT_SIDE_URL = "http://127.0.0.1"
     PORT = 8000
@@ -39,111 +38,186 @@ elif ENV == 'heroku':
 @app.route("/")
 def index():
     # Auth Step 1: Authorize Spotify User
-    a = auth()
-    return redirect(a.auth_url)
+    authorization = auth()
+    return redirect(authorization.auth_url)
 
 @app.route("/callback/q")
 def callback():
     # Auth Step 2: Requests refresh and access tokens
-    a = auth()
-    return redirect(a.get_accessToken(request.args['code']))
+    authorization = auth()
+    return redirect(authorization.get_accessToken(request.args['code']))
 
 @app.route("/authed", methods=["GET","POST"])
 def authed():
 
-    #placeholder for discover weekly URI
-    #discURI = ""
-            #if playlist['playlistName'] == 'DiscoverWeekly':
-            # if plalyist['owner'] == 'Spotify':
-            #     discURI = plalyist['uri']
-
-    #refresh token AQDbDZC5tR4z0yeUhdNmdMEF0AF0PwHnMmHk4U4JQlA56SnJVn9lnxNSPcKyd8puzctCtptsYVF9835ptfD314nEY01G9_D2HiCajzRW5Qm7vkUTHZAAZi_i-5NUNMKMEH0
-    #discovery weekly 2020 spotify:playlist:5VhyW1OgZrRACjgIbLbtIs
-    #discover weekly spotify:playlist:37i9dQZEVXcHYX9cf8IcTf
-
-    #grab the tokens from the URL
+    #grab the tokens from the URL + intialize data class
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer" #always bearer, don't need to grab this each request
     expires_in = request.args["expires_in"]
+    spotifyDataRetrieval = data(access_token)
+    authorization = auth()
 
-
-    a = auth()
-    d = data(access_token)
-
-    prof = d.profile()
-    userName = prof.get("userName")
-    image = prof.get("images")
+    profile = spotifyDataRetrieval.profile()
+    userName = profile.get("userName")
+    image = profile.get("images")
 
     if len(image) == 0:
         imgurl = 'N/A'
     else:
         imgurl = image[0]['url']
         
-
-    refreshPage = "{}?refresh_token={}&access_token={}".format(a.refreshURL(), refresh_token, access_token)
-    analysisPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(a.analysisURL(), refresh_token, access_token, expires_in)
-
     #build the link for each playlist
-    response = d.userPlaylists()
-    playlists = []
-    for playlist in response:
-        pl = (playlist['uri'],playlist['playlistName'])
-        playlists.append(pl)
+    allUserPLaylists = spotifyDataRetrieval.userPlaylists()
+    checkboxData = []
+    for playlist in allUserPLaylists:
+        checkboxFormatPlaylist = (playlist['uri'],playlist['playlistName'])
+        checkboxData.append(checkboxFormatPlaylist)
 
     #set up the checkbox classes
+    
     class MultiCheckboxField(SelectMultipleField):
         widget = widgets.ListWidget(prefix_label=False)
         option_widget = widgets.CheckboxInput()
 
     class SimpleForm(FlaskForm):
         # create a list of value/description tuples
-        files = [(x, y) for x,y in playlists]
+        files = [(x, y) for x,y in checkboxData]
         playlistSelections = MultiCheckboxField('Label', choices=files)
 
     form = SimpleForm()
+
     if form.validate_on_submit():
         formData = form.playlistSelections.data
         if not formData:
-            return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
+            return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, url=imgurl, form=form)
         else:
-            dataString = ",".join(formData)
-            analysisPageSelections = "{}&data={}".format(analysisPage, dataString)
-            return redirect(analysisPageSelections) 
+            clusterVisPage = "{}?refresh_token={}&access_token={}&data={}".format(authorization.visualizationURL(), refresh_token, access_token, ",".join(formData))
+            return redirect(clusterVisPage) 
     else:
         print(form.errors)
 
-    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, link=refreshPage, url=imgurl, form=form)
+    return render_template("index.html", title='Home', user=userName, token=access_token, refresh=refresh_token, url=imgurl, form=form)
 
 @app.route("/analysis", methods=["GET"])
 def analysis():
 
-    featuresList = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
+    #list of spotify attributes used in the model
+    spotifyAudioFeatures = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
 
+    #intialize data retrieval class
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
     token_type = "Bearer"
-    expires_in = request.args["expires_in"]
-
-    d = data(access_token)
+    spotifyDataRetrieval = data(access_token)
 
     #raw data from the checklist (a list of playlist URIs specifically)
     pldata = request.args["data"]
-
     unpackedData = pldata.split(",")
 
-    prof = d.profile()
-    userName = prof.get("userName")
+    
+    profile = spotifyDataRetrieval.profile()
+    userName = profile.get("userName")
 
     #retrieve songs and analysis for user selected playlists
     masterSongList=[]
     for i in range(len(unpackedData)):
-        songs = d.getPlaylistTracks(unpackedData[i])
+        songs = spotifyDataRetrieval.getPlaylistTracks(unpackedData[i])
         masterSongList.extend(songs)
 
-    playlistsongs = d.trackFeatures(masterSongList)
+    masterSongListWithFeatures = spotifyDataRetrieval.trackFeatures(masterSongList)
+    
+    ################################################################
+    ###               WORKING CLUSTER SECTION                    ###
+    ################################################################
 
-    ##EXPERIMENTAL REC SECTION
+    #set up kmeans, check how many songs
+    if len(masterSongListWithFeatures)<5:
+        clusters = len(masterSongListWithFeatures)
+    else:
+        clusters = 5
+
+    
+    statistics = stats(masterSongListWithFeatures)
+    statistics.kMeans(spotifyAudioFeatures, clusters)
+    dataframeWithClusters = statistics.df
+    clusterCenterCoordinates = statistics.centers
+
+    #create playlists for each kmeans assignment
+    spotifyCreate = create(access_token)
+    repeatgenres = {}
+    for i in range(clusters):
+        descript = ""
+        selectedClusterCenter = clusterCenterCoordinates[i]
+        
+        targets = {}
+        for j in range(len(spotifyAudioFeatures)):
+            entry = str(" "+str(spotifyAudioFeatures[j])+":"+str(round(selectedClusterCenter[j],3))+" ")
+            descript += entry
+
+            #we can return less detail here, maybe 'highly danceable' is sufficient
+
+        descript +=" created on {}".format(NICEDATE)
+        descript+=" by JTokarowski "
+
+        dataframeFilteredToSingleCluster = dataframeWithClusters.loc[dataframeWithClusters['kMeansAssignment'] == i]
+
+        genres = dataframeFilteredToSingleCluster['genres'].values.tolist()
+        genreslist = genres[0]
+
+        genreDict = {}
+        for genre in genreslist:
+            g =  genre.replace(" ", "_")
+            if g in genreDict:
+                genreDict[g]+=1
+            else:
+                genreDict[g]=1
+
+        v=list(genreDict.values())
+        k=list(genreDict.keys())
+
+        try:
+            maxGenre = k[v.index(max(v))]
+        except:
+            maxGenre = "¯\_(ツ)_/¯"
+
+        if maxGenre in repeatgenres.keys():
+            repeatgenres[maxGenre]+=1
+            maxGenre += "_"+str(repeatgenres[maxGenre])
+        else:
+            repeatgenres[maxGenre]=1
+
+        maxGenre = maxGenre.replace("_", " ")
+
+        newPlaylistInfo = spotifyCreate.newPlaylist(userName, "+| "+str(maxGenre)+" |+",descript)
+        newPlaylistID = spotifyDataRetrieval.URItoID(newPlaylistInfo['uri'])
+
+
+        dataframeFilteredToSingleCluster = dataframeFilteredToSingleCluster['trackId']
+        newPlaylistTracksIDList = dataframeFilteredToSingleCluster.values.tolist()
+
+        outputPlaylistTracks=[]
+        for spotifyID in newPlaylistTracksIDList:
+            outputPlaylistTracks.append(spotifyDataRetrieval.idToURI("track",spotifyID))
+
+        if len(outputPlaylistTracks)>0:
+            n = 50 #spotify playlist addition limit
+            for j in range(0, len(outputPlaylistTracks), n):  
+                playlistTracksSegment = outputPlaylistTracks[j:j + n]
+                spotifyCreate.addSongs(newPlaylistID, ",".join(playlistTracksSegment))
+            
+    return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=spotifyAudioFeatures, centers=clusterCenterCoordinates)
+
+    ################################################################
+    ###               TUNNEL SEGMENT BETA                       ###
+    ################################################################
+
+    #key = "target_{}".format(spotifyAudioFeatures[j])
+    #key2 = "min_{}".format(featuresList[j])
+    #key3 = "max_{}".format(featuresList[j])
+    #targets[key] = selectedClusterCenter[j]
+    #targets[key2] = center[j]-0.2
+    #targets[key3] = center[j]+0.2
 
     # topType = 'artists'
 
@@ -273,114 +347,9 @@ def analysis():
 
    #  #print(d.getMyTop(topType='tracks', term='long_term'))    
 
-    
-    ################################################################
-    # WORKING CLUSTER SECTION
-
-    #set up kmeans, check how many songs
-    if len(masterSongList)<5:
-        clusters = len(masterSongList)
-    else:
-        clusters = 5
-
-    
-    statistics = stats(playlistsongs)
-    statistics.kMeans(featuresList, clusters)
-    df = statistics.df
-    centers = statistics.centers
-
-    #create playlists for each kmeans assignment
-    c1 = create(access_token)
-    repeatgenres = {}
-    for i in range(clusters):
-        descript = ""
-        center = centers[i]
-        targets = {}
-        for j in range(len(featuresList)):
-            entry = str(" "+str(featuresList[j])+":"+str(round(center[j],3))+" ")
-            key = "target_{}".format(featuresList[j])
-            #key2 = "min_{}".format(featuresList[j])
-            #key3 = "max_{}".format(featuresList[j])
-            targets[key] = center[j]
-            #targets[key2] = center[j]-0.2
-            #targets[key3] = center[j]+0.2
-            descript += entry
-
-            #we can return less detail here, maybe 'highly danceable' is sufficient
-
-        descript +=" created on {}".format(NICEDATE)
-        descript+=" by JTokarowski "
-
-        dfi = df.loc[df['kMeansAssignment'] == i]
-
-        genres = dfi['genres'].values.tolist()
-        genreslist = genres[0]
-
-        genreDict = {}
-        for genre in genreslist:
-            g =  genre.replace(" ", "_")
-            if g in genreDict:
-                genreDict[g]+=1
-            else:
-                genreDict[g]=1
-
-        v=list(genreDict.values())
-        k=list(genreDict.keys())
-
-        try:
-            maxGenre = k[v.index(max(v))]
-        except:
-            maxGenre = "¯\_(ツ)_/¯"
-
-        if maxGenre in repeatgenres.keys():
-            repeatgenres[maxGenre]+=1
-            maxGenre += "_"+str(repeatgenres[maxGenre])
-        else:
-            repeatgenres[maxGenre]=1
-
-        maxGenre = maxGenre.replace("_", " ")
-
-        response2 = c1.newPlaylist(userName, "+| "+str(maxGenre)+" |+",descript)
-        r2 = response2['uri']
-        fields = r2.split(":")
-        plid = fields[2]
-
-
-        dfi = dfi['trackId']
-        idList = dfi.values.tolist()
-
-        uriList=[]
-        for item in idList:
-            uriList.append("spotify:track:{}".format(item))
-
-        if len(uriList)>0:
-            n = 50 #spotify playlist addition limit
-            for j in range(0, len(uriList), n):  
-                listToSend = uriList[j:j + n]
-                stringList = ",".join(listToSend)
-                response3 = c1.addSongs(plid, stringList)
-            
-    return render_template('radar_chart.html', title='Cluster Centers', max = 1.0, labels=featuresList, centers=centers)
-
-@app.route("/refresh")
-def refresh():
-
-    r1 = auth()
-    r2 = r1.get_refreshToken(request.args.get("refresh_token"))
-    access_token = r2.get('refreshed_access_token')
-    refresh_token = r2.get('refreshed_refresh_token')
-    expires_in = r2.get('refreshed_expires_in')
-
-    p1 = data(access_token)
-    p2 = p1.profile()
-    userName = p2.get("userName")
-    refreshPage = "{}?refresh_token={}&access_token={}".format(r1.refreshURL(), refresh_token, access_token)
-    playlistsPage = "{}?refresh_token={}&access_token={}&expires_in={}".format(r1.playlistsURL(), refresh_token, access_token, expires_in)
-
-    return render_template("refresh.html", title='Refreshed', token=access_token, refresh=refresh_token, link=refreshPage, link2=playlistsPage, user=userName)
-    
+#instantiate app
 if __name__ == "__main__":
     if ENV == 'heroku':
-        app.run(debug=False)#, port=PORT)
+        app.run(debug=False)
     else:
         app.run(debug=True, port=PORT)
