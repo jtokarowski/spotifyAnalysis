@@ -31,11 +31,20 @@ if ENV == 'dev':
     CLIENT_SIDE_URL = "http://127.0.0.1"
     PORT = 8000
     REDIRECT_URI = "{}:{}/callback/q".format(CLIENT_SIDE_URL, PORT)
+    START_PAGE_LINK = "{}:{}/start".format(CLIENT_SIDE_URL, PORT)
 elif ENV == 'heroku':
     CLIENT_SIDE_URL = "https://musicincontext.herokuapp.com"
     REDIRECT_URI = "{}/callback/q".format(CLIENT_SIDE_URL)
+    START_PAGE_LINK = "{}/start".format(CLIENT_SIDE_URL)
 
 @app.route("/")
+def home():
+    #Serve the landing page
+    return render_template("landingpage.html", nextPageLink = START_PAGE_LINK)
+
+
+@app.route("/start")
+#TODO: set / to serve landing page, with link to begin the flow
 def index():
     # Auth Step 1: Authorize Spotify User
     authorization = auth()
