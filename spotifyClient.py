@@ -398,25 +398,20 @@ class data:
         
     def getMyTop(self, topType, term, limit):
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL, topType, term, limit)
+        response = requests.get(apiEndpoint, headers = authorizationHeader)
+        responseData = json.loads(response.text) 
 
-        cleaned_data = []
+        cleanedData = []
         if topType == 'tracks':
-            for track in response_data['items']:
-                clean = {}
-                clean['track_id'] = track['id']
-                cleaned_data.append(clean)
+            for rawTrack in responseData['items']:
+                cleanedData.append(rawTrack['id'])
         else:
-            for artist in response_data['items']:
-                clean = {}
-                clean['artist_id'] = artist['id']
-                clean['genres'] = artist['genres']
-                cleaned_data.append(clean)
+            for rawArtist in responseData['items']:
+                cleanedData.append(rawArtist['id'])
 
-        return cleaned_data
+        return cleanedData
    
     def getTop50(self):
 
@@ -427,18 +422,18 @@ class data:
 
     def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
 
         if market:
-            api_endpoint+="market={}".format(market)
+            apiEndpoint+="market={}".format(market)
         else:
-            api_endpoint+="market=US"
+            apiEndpoint+="market=US"
 
         if not limit:
             limit = 20
 
-        api_endpoint+="&limit={}".format(limit)
+        apiEndpoint+="&limit={}".format(limit)
 
         #SEEDS
         if seed_artists:
@@ -460,16 +455,14 @@ class data:
                         api_endpoint+="&{}={}".format(param,targets[param])
         
 
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)
+        reccomendationsResponse = requests.get(apiEndpoint, headers = authorizationHeader)
+        reccomendationsResponseData = json.loads(reccomendationsResponse.text)
 
-        output = []
-        for song in response_data['tracks']:
-            output.append(self.cleanTrackData(song))
+        cleanRecommendations = []
+        for track in reccomendationsResponseData['tracks']:
+            cleanRecommendations.append(self.cleanTrackData(track))
 
-        print(response_data['seeds'])
-
-        return output
+        return cleanRecommendations
 
     def search(self,name, artist,searchType, limit=None):
 
