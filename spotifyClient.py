@@ -330,12 +330,22 @@ class data:
 
         for track in rawTracks:
             cleanTrackData = {} 
-            cleanTrackData['trackName'] = track['track']['name'].title()
-            cleanTrackData['trackID'] = track['track']['id']
+            try:
+                trackName = track['track']['name'].title()
+                trackID = track['track']['id']
+                artists = track['track']['artists']
+            except:
+                trackName = track['name'].title()
+                trackID = track['id']
+                artists = track['artists']
+            
+            
+            cleanTrackData['trackName'] = trackName
+            cleanTrackData['trackID'] = trackID
             
             artistNameList = []
             artistIdList = []
-            for artist in track['track']['artists']:
+            for artist in artists:
                 artistNameList.append(artist['name'])
                 artistIdList.append(artist['id'])
                 
@@ -437,11 +447,11 @@ class data:
 
         #SEEDS
         if seed_artists:
-            api_endpoint+="&seed_artists={}".format(seed_artists)
+            apiEndpoint+="&seed_artists={}".format(seed_artists)
         if seed_genres:
-            api_endpoint+="&seed_genres={}".format(seed_genres)
+            apiEndpoint+="&seed_genres={}".format(seed_genres)
         if seed_tracks:
-            api_endpoint+="&seed_tracks={}".format(seed_tracks)
+            apiEndpoint+="&seed_tracks={}".format(seed_tracks)
 
         #TARGETS, MINS, MAXS
         if targets:
@@ -452,17 +462,13 @@ class data:
                 for prefix in ["min_", "max_", "target_"]:
                     param = prefix + attribute
                     if param in targets:
-                        api_endpoint+="&{}={}".format(param,targets[param])
+                        apiEndpoint+="&{}={}".format(param,targets[param])
         
 
-        reccomendationsResponse = requests.get(apiEndpoint, headers = authorizationHeader)
-        reccomendationsResponseData = json.loads(reccomendationsResponse.text)
+        recommendationsResponse = requests.get(apiEndpoint, headers = authorizationHeader)
+        recommendationsResponseData = json.loads(recommendationsResponse.text)
 
-        cleanRecommendations = []
-        for track in reccomendationsResponseData['tracks']:
-            cleanRecommendations.append(self.cleanTrackData(track))
-
-        return cleanRecommendations
+        return recommendationsResponseData['tracks']
 
     def search(self,name, artist,searchType, limit=None):
 
@@ -546,8 +552,11 @@ class data:
 
         #pull out relevant identifiers
         for track in incomingTracks:
-            artistIDs.extend(track['artistIDs'])
-            trackIDs.append(track['trackID'])
+            try:    
+                artistIDs.extend(track['artistIDs'])
+                trackIDs.append(track['trackID'])
+            except:
+                track
 
         #create dict of IDs and and genres
         artistData = self.getArtistData(artistIDs)
