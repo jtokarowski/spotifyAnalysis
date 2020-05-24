@@ -134,6 +134,7 @@ class create:
         self.access_token = access_token
 
     def newPlaylist(self, userid, playlistName, description=None):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/create-playlist/
 
         if description is None:
             description = "None"
@@ -148,15 +149,25 @@ class create:
 
         return response_data
 
-    def addSongs(self, plid, uriList):
-        if type(uriList) == list:
-            uriList = ",".join(uriList)
+    def addTracks(self, playlistID, uriList):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/add-tracks-to-playlist/
 
-        user_playlist_endpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, plid,uriList)
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        response = requests.post(user_playlist_endpoint, headers=authorization_header)
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        return response
+        apiLimit = 50 #spotify playlist addition limit
+        for i in range(0, len(uriList), apiLimit):  
+            listToSend = uriList[i:i + apiLimit]
+            stringList = ",".join(listToSend)
+            
+            userPlaylistEndpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, playlistID, stringList)
+            response = requests.post(userPlaylistEndpoint, headers = authorizationHeader)
+
+            if response.status_code == 201:
+                continue
+            else:
+                return "Error code: {}, {}".format(response.status_code, response.text)
+
+        return "All tracks added successfully"
 
 class data:
     def __init__(self, access_token):
@@ -367,30 +378,6 @@ class data:
 
         return response_data['genres']
 
-    # def getArtistGenres(self, artistids):
-
-    #     authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-    #     if isinstance(artistids, list):
-    #         if len(artistids)>1:
-    #             genres = []
-    #             #turn the list into comma separated string
-    #             commaSep_artistids = ",".join(artistids)
-    #             api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, commaSep_artistids)
-    #             response = requests.get(api_endpoint, headers=authorization_header)
-    #             response_data = json.loads(response.text) 
-    #             for i in range(len(artistids)):
-    #                 genres.append(response_data['artists'][i]['genres'])
-            
-    #             return genres
-
-    #     api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids[0])
-    #     response = requests.get(api_endpoint, headers=authorization_header)
-    #     response_data = json.loads(response.text) 
-
-    #     genres = response_data['artists'][0]['genres'] 
-        
-    #     return genres
 
     def getRecentSongs(self):
 
