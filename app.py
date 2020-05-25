@@ -12,7 +12,6 @@ from collections import Counter
 from operator import itemgetter
 import time
 import os
-from tqdm import tqdm
 
 ENV = os.environ.get('ENV')
 SECRET_KEY = ' ' #This doesn't actually get used, but simpleForm needs this to run
@@ -141,7 +140,7 @@ def authed():
     # of top artists, target 0 and target 1 to get almost all of pool
     cleanMasterTrackPool = []
     cleanMasterTrackPoolIDs = []
-    for artist in tqdm(userTopArtists):  
+    for artist in userTopArtists:  
         recommendedTracks = spotifyDataRetrieval.getRecommendations(limit = 100, seed_artists = artist)
         #break if we don't get anything back
         if len(recommendedTracks) == 0 or recommendedTracks == None:
