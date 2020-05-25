@@ -67,7 +67,7 @@ def authed():
 
     #list of audio features used to fit curve
     spotifyAudioFeatures = ['acousticness','danceability','energy','instrumentalness','liveness','speechiness','valence']
-
+    
     #grab the tokens from the URL + intialize data class
     access_token = request.args.get("access_token")
     refresh_token = request.args.get("refresh_token")
@@ -88,19 +88,26 @@ def authed():
     ################################################################
     #set target is a list of dicts
     DJSET = trainingData['fedde_le_grand'][2]['tracks_with_features']
+
+    #initialize mapreduce lists - aligned with target tracks
+    minimumDistances = [999999] * len(DJSET)
+    minimumDistanceTracks = ["None"] * len(DJSET)
     
     newSetTargets = []
 
-    #TODO set audio features to skip here
+    skipFeatures = ['liveness']
 
     #set max distance per attribute we are willing to use
     bound = 0.2
     
-
     trackIndex = 0
     for track in DJSET:
         trackTargets = {}
         for audioFeature in spotifyAudioFeatures:
+            #store the features in same format for easy ED calc later
+            trackTargets['audioFeatures'] =  track['audioFeatures']
+
+            #set targets + min/max
             key = "target_{}".format(audioFeature)
             trackTargets[key] = track['audioFeatures'][audioFeature]
                 
@@ -116,7 +123,7 @@ def authed():
     print("Completed target setup")
 
     ################################################################
-    ##          STEP ONE - BUILD POOL OF SUGGESTED TRACKS         ##
+    ##    STEP ONE - BUILD POOL OF SUGGESTED TRACKS + MAP         ##
     ################################################################
 
     #build up list of user top artists
@@ -135,65 +142,50 @@ def authed():
     cleanMasterTrackPoolIDs = []
     for artist in tqdm(userTopArtists):  
         recommendedTracks = spotifyDataRetrieval.getRecommendations(limit = 100, seed_artists = artist)
-        
         #break if we don't get anything back
         if len(recommendedTracks) == 0 or recommendedTracks == None:
             continue
 
         cleanRecommendations = spotifyDataRetrieval.cleanTrackData(recommendedTracks)
         cleanRecommendationsWithFeatures = spotifyDataRetrieval.getAudioFeatures(cleanRecommendations)
-        poolAdditions = 0
-        for cleanTrack in tqdm(cleanRecommendationsWithFeatures):
+        
+        trackPoolAdditions = 0
+        for cleanTrack in cleanRecommendationsWithFeatures:
+            #check if it will dupe
             if cleanTrack['trackID'] not in cleanMasterTrackPoolIDs:
-                poolAdditions += 1
+                #calculate distance to each target
+                cleanTrack['euclideanDistances'] = []
+                arrayIndex = 0
+                for target in newSetTargets:
+                    euclideanDistance = spotifyDataRetrieval.calculateEuclideanDistance(cleanTrack, target, spotifyAudioFeatures, "absValue")
+                    #build a list for each suggested track to each target
+                    cleanTrack['euclideanDistances'].append(euclideanDistance)
+                    #check vs the current closest match
+                    if euclideanDistance < minimumDistances[arrayIndex]:
+                        minimumDistances[arrayIndex] = euclideanDistance
+                        minimumDistanceTracks[arrayIndex] = cleanTrack
+                    arrayIndex += 1
+
+
+                trackPoolAdditions += 1
                 cleanMasterTrackPool.append(cleanTrack)
                 cleanMasterTrackPoolIDs.append(cleanTrack['trackID'])
-        print("Added {} tracks to recommendations pool".format(poolAdditions))
+        print("Added {} tracks to recommendations pool".format(trackPoolAdditions))
 
     print("Loaded {} unique track recommendations".format(len(cleanMasterTrackPoolIDs)))
 
     ################################################################
-    ##           STEP TWO - FIT RECOMMENDATIONS TO CURVE          ##
+    ##           STEP TWO SEND SET TO SPOTIFY                     ##
     ################################################################
-
-    #TODO- MAPREDUCE FOR EFFICIENCY
-    recommendations = []
-
-    #for each target we're trying to match songs to
-    for targetTrack in newSetTargets:
-        totalEuclideanDistances = []
-        #check each possible song in our pool
-        for recommendedTrack in cleanMasterTrackPool:
-            totalEuclideanDistance = 0
-            #compare the features to target and record the distance
-            for audiofeature in spotifyAudioFeatures:
-                skipFeatures = []#'liveness']
-                if audiofeature not in skipFeatures:
-                    diff = (recommendedTrack['audioFeatures'][audiofeature]*100) - (targetTrack["target_{}".format(audioFeature)]*100)
-                    totalEuclideanDistance += diff * diff
-           
-            #append the distance to a list that aligns with the pool
-            totalEuclideanDistances.append(totalEuclideanDistance)
-
-        # sort the recommendations by min ED
-        bestFitTrack = cleanMasterTrackPool[totalEuclideanDistances.index(min(totalEuclideanDistances))]
-        recommendations.append(bestFitTrack)
-        
-        # print("TARGET")
-        # print(targetTrack)
-        # print("################################################################")
-        # print("SUGGESTION")
-        # print(bestFitTrack)
-        # print("################################################################")
 
     #create the playlist to populate
     spotifyCreate = create(access_token)
-    createPlaylistResponse = spotifyCreate.newPlaylist(userName, "+| TEST SET |+","N/A")
+    createPlaylistResponse = spotifyCreate.newPlaylist(userName, "+| MiC Tailored Set |+","Created via Music in Context ++2020 Jtokarowski++")
     playlistID = spotifyDataRetrieval.URItoID(createPlaylistResponse['uri'])
     
     #convert to URI
     recommendationURIs = []
-    for track in recommendations:
+    for track in minimumDistanceTracks:
         recommendationURIs.append(spotifyDataRetrieval.idToURI("track", track['trackID']))
     
     

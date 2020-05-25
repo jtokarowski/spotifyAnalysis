@@ -184,6 +184,18 @@ class data:
         splitURI = URI.split(":")
         return splitURI[2]
 
+    def calculateEuclideanDistance(self, track, target, audioFeatures, methodology):
+        #returns total distance^2 for 2 given tracks
+        totalEuclideanDistance = 0 
+        for feature in audioFeatures:
+            euclideanDistance = (track['audioFeatures'][feature]*100) - (target['audioFeatures'][feature]*100)
+            if methodology == 'absValue':
+                totalEuclideanDistance += abs(euclideanDistance)
+            else:
+                totalEuclideanDistance += euclideanDistance^2
+
+        return totalEuclideanDistance
+
 
     def profile(self):
         #https://developer.spotify.com/documentation/web-api/reference/users-profile/
