@@ -406,6 +406,7 @@ class data:
         #the response_data['next'] field provides the endpoint to hit for next 50 songs
         
     def getMyTop(self, topType, term, limit):
+        #https://developer.spotify.com/documentation/web-api/reference/personalization/get-users-top-artists-and-tracks/
 
         authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
         apiEndpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL, topType, term, limit)

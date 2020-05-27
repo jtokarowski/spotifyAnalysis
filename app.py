@@ -92,6 +92,7 @@ def authed():
     #initialize mapreduce lists - aligned with target tracks
     minimumDistances = [999999] * len(DJSET)
     minimumDistanceTracks = ["None"] * len(DJSET)
+    minimumDistanceTrackIDs = ["None"] * len(DJSET)
     
     newSetTargets = []
 
@@ -142,7 +143,8 @@ def authed():
     cleanMasterTrackPoolIDs = []
     for artist in userTopArtists:  
         recommendedTracks = spotifyDataRetrieval.getRecommendations(limit = 100, seed_artists = artist)
-        #break if we don't get anything back
+        
+        #continue if we don't get anything back
         if len(recommendedTracks) == 0 or recommendedTracks == None:
             continue
 
@@ -155,6 +157,7 @@ def authed():
             if cleanTrack['trackID'] not in cleanMasterTrackPoolIDs:
                 #calculate distance to each target
                 cleanTrack['euclideanDistances'] = []
+                cleanTrack['isUsed'] = False
                 arrayIndex = 0
                 for target in newSetTargets:
                     euclideanDistance = spotifyDataRetrieval.calculateEuclideanDistance(cleanTrack, target, spotifyAudioFeatures, "absValue")
@@ -162,10 +165,14 @@ def authed():
                     cleanTrack['euclideanDistances'].append(euclideanDistance)
                     #check vs the current closest match
                     if euclideanDistance < minimumDistances[arrayIndex]:
-                        minimumDistances[arrayIndex] = euclideanDistance
-                        minimumDistanceTracks[arrayIndex] = cleanTrack
+                        #make sure we don't dupe a track in the new set
+                        if cleanTrack['trackID'] not in minimumDistanceTrackIDs:
+                            minimumDistances[arrayIndex] = euclideanDistance
+                            minimumDistanceTracks[arrayIndex] = cleanTrack
+                            minimumDistanceTrackIDs[arrayIndex] = cleanTrack['trackID']
+                    
+                    #check against next target
                     arrayIndex += 1
-
 
                 trackPoolAdditions += 1
                 cleanMasterTrackPool.append(cleanTrack)
