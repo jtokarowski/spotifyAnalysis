@@ -41,7 +41,7 @@ elif ENV == 'heroku':
 
 
 SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"
-STATE = "" #Should create a random string generator here to make a new state for each request
+STATE = "" #TODO Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
 td = date.today()
@@ -173,6 +173,12 @@ class data:
     def __init__(self, access_token):
         self.access_token = access_token
 
+    def checkAPIStatus(self):
+        #TODO set up a helper that checks response code and acts accoridngly 
+        #ex. if it's a timeout problem, resend request
+
+        return "OK"
+
     def idToURI(self, type, id):
         if type not in ["playlist", "track", "artist"]:
             return "Invalid type"
@@ -195,7 +201,6 @@ class data:
                 totalEuclideanDistance += euclideanDistance^2
 
         return totalEuclideanDistance
-
 
     def profile(self):
         #https://developer.spotify.com/documentation/web-api/reference/users-profile/
@@ -237,10 +242,10 @@ class data:
 
         currentUserPlaylists = []
         
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
         apiEndpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
         
-        currentUserPlaylistsResponse = requests.get(apiEndpoint, headers=authorization_header)
+        currentUserPlaylistsResponse = requests.get(apiEndpoint, headers=authorizationHeader)
         responseData = json.loads(currentUserPlaylistsResponse.text)
         currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
@@ -251,7 +256,7 @@ class data:
             for i in range(runs):
                 offset += 50
                 newApiEndpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
-                currentUserPlaylistsResponse = requests.get(newApiEndpoint, headers=authorization_header)
+                currentUserPlaylistsResponse = requests.get(newApiEndpoint, headers=authorizationHeader)
                 responseData = json.loads(currentUserPlaylistsResponse.text)
                 currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
@@ -380,30 +385,23 @@ class data:
         
         return cleanTracks
 
-    def getGenreSeeds(self):
+    def getRecentTracks(self):
+        #https://developer.spotify.com/documentation/web-api/reference/player/get-recently-played/
+        apiLimit = 50
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        api_endpoint = "{}/recommendations/available-genre-seeds".format(SPOTIFY_API_URL)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)     
-
-        return response_data['genres']
-
-
-    def getRecentSongs(self):
-
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
+        
+        response = requests.get(apiEndpoint, headers=authorizationHeader)
+        responseData = json.loads(response.text) 
 
         idlist = []
-        for i in range(len(response_data['items'])):
-            idlist.append(response_data['items'][i]['track']['id'])
+        for i in range(len(responseData['items'])):
+            idlist.append(responseData['items'][i]['track']['id'])
 
         return idlist
-        #the response_data['next'] field provides the endpoint to hit for next 50 songs
+        #the response_data['next'] field provides the endpoint to hit for next 50 tracks
+        #TODO: add option to continue grabbing older tracks
         
     def getMyTop(self, topType, term, limit):
         #https://developer.spotify.com/documentation/web-api/reference/personalization/get-users-top-artists-and-tracks/
@@ -424,13 +422,12 @@ class data:
         return cleanedData
    
     def getTop50(self):
-
         #static link for global top50
-        results = self.getPlaylistTracks("spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
-        
-        return results
+        return getPlaylistTracks(self, "spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
 
     def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
+        #https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/
+        #TODO: add funcitonality to examine pool size before and after filters
 
         authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
         apiEndpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
@@ -470,7 +467,8 @@ class data:
 
         return recommendationsResponseData['tracks']
 
-    def search(self,name, artist,searchType, limit=None):
+    def search(self, name, artist, searchType, limit=None):
+        #https://developer.spotify.com/documentation/web-api/reference/search/search/
 
         #could overlay simple ML here to find best match to our track
         #eventually want to feed in artists separate from track name
@@ -485,9 +483,9 @@ class data:
         if not limit:
             limit = 1
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        api_endpoint = "{}/search?q={}+artist:{}&type={}&limit={}&market=US".format(SPOTIFY_API_URL,name,artist,searchType,limit)
+        apiEndpoint = "{}/search?q={}+artist:{}&type={}&limit={}&market=US".format(SPOTIFY_API_URL,name,artist,searchType,limit)
         response = requests.get(api_endpoint, headers=authorization_header)
         if response.status_code ==429:
             try:
@@ -552,11 +550,8 @@ class data:
 
         #pull out relevant identifiers
         for track in incomingTracks:
-            try:    
-                artistIDs.extend(track['artistIDs'])
-                trackIDs.append(track['trackID'])
-            except:
-                track
+            artistIDs.extend(track['artistIDs'])
+            trackIDs.append(track['trackID'])
 
         #create dict of IDs and and genres
         artistData = self.getArtistData(artistIDs)
