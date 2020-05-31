@@ -162,6 +162,12 @@ class data:
     def __init__(self, access_token):
         self.access_token = access_token
 
+    def checkAPIStatus(self):
+        #TODO set up a helper that checks response code and acts accoridngly 
+        #ex. if it's a timeout problem, resend request
+
+        return "OK"
+
     def idToURI(self, type, id):
         if type not in ["playlist", "track", "artist"]:
             return "Invalid type"
@@ -357,96 +363,77 @@ class data:
 
         return response_data['genres']
 
-    # def getArtistGenres(self, artistids):
 
-    #     authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+    def getRecentTracks(self):
+        #https://developer.spotify.com/documentation/web-api/reference/player/get-recently-played/
+        apiLimit = 50
 
-    #     if isinstance(artistids, list):
-    #         if len(artistids)>1:
-    #             genres = []
-    #             #turn the list into comma separated string
-    #             commaSep_artistids = ",".join(artistids)
-    #             api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, commaSep_artistids)
-    #             response = requests.get(api_endpoint, headers=authorization_header)
-    #             response_data = json.loads(response.text) 
-    #             for i in range(len(artistids)):
-    #                 genres.append(response_data['artists'][i]['genres'])
-            
-    #             return genres
-
-    #     api_endpoint = "{}/artists?ids={}".format(SPOTIFY_API_URL, artistids[0])
-    #     response = requests.get(api_endpoint, headers=authorization_header)
-    #     response_data = json.loads(response.text) 
-
-    #     genres = response_data['artists'][0]['genres'] 
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
         
-    #     return genres
-
-    def getRecentSongs(self):
-
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/player/recently-played?limit=50".format(SPOTIFY_API_URL)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
+        response = requests.get(apiEndpoint, headers=authorizationHeader)
+        responseData = json.loads(response.text) 
 
         idlist = []
-        for i in range(len(response_data['items'])):
-            idlist.append(response_data['items'][i]['track']['id'])
+        for i in range(len(responseData['items'])):
+            idlist.append(responseData['items'][i]['track']['id'])
 
         return idlist
-        #the response_data['next'] field provides the endpoint to hit for next 50 songs
+        #the response_data['next'] field provides the endpoint to hit for next 50 tracks
+        #TODO: add option to continue grabbing older tracks
         
     def getMyTop(self, topType, term, limit):
+        #https://developer.spotify.com/documentation/web-api/reference/personalization/get-users-top-artists-and-tracks/
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text) 
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
+        response = requests.get(apiEndpoint, headers=authorizationHeader)
+        responseData = json.loads(response.text) 
 
-        cleaned_data = []
+        cleanedData = []
         if topType == 'tracks':
-            for track in response_data['items']:
-                clean = {}
-                clean['track_id'] = track['id']
-                cleaned_data.append(clean)
+            for track in responseData['items']:
+                cleanTrack = {}
+                cleanTrack['trackID'] = track['id']
+                cleanedData.append(cleanTrack)
         else:
-            for artist in response_data['items']:
-                clean = {}
-                clean['artist_id'] = artist['id']
-                clean['genres'] = artist['genres']
-                cleaned_data.append(clean)
+            for artist in responseData['items']:
+                cleanArtist = {}
+                cleanArtist['artistID'] = artist['id']
+                cleanArtist['genres'] = artist['genres']
+                cleanedData.append(cleanArtist)
 
-        return cleaned_data
+        return cleanedData
    
     def getTop50(self):
-
         #static link for global top50
-        results = self.getPlaylistTracks("spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
-        
-        return results
+        return getPlaylistTracks(self, "spotify:playlist:37i9dQZEVXbMDoHDwVN2tF"):
 
-    def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
+    def getRecommendations(self, targets=None, market=None, apiLimit=None, seedArtists=None, seedGenres=None, seedTracks=None):
+        #https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        api_endpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
+        #TODO: add funcitonality to examine pool size before and after filters
+
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
+        apiEndpoint = "{}/recommendations?".format(SPOTIFY_API_URL)
 
         if market:
-            api_endpoint+="market={}".format(market)
+            apiEndpoint+="market={}".format(market)
         else:
-            api_endpoint+="market=US"
+            apiEndpoint+="market=US"
 
-        if not limit:
-            limit = 20
+        if not apiLimit:
+            apiLimit = 20
 
-        api_endpoint+="&limit={}".format(limit)
+        apiEndpoint+="&limit={}".format(apiLimit)
 
         #SEEDS
-        if seed_artists:
-            api_endpoint+="&seed_artists={}".format(seed_artists)
-        if seed_genres:
-            api_endpoint+="&seed_genres={}".format(seed_genres)
-        if seed_tracks:
-            api_endpoint+="&seed_tracks={}".format(seed_tracks)
+        if seedArtists:
+            apiEndpoint+="&seed_artists={}".format(seedArtists)
+        if seedGenres:
+            apiEndpoint+="&seed_genres={}".format(seedGenres)
+        if seedTracks:
+            apiEndpoint+="&seed_tracks={}".format(seedTracks)
 
         #TARGETS, MINS, MAXS
         if targets:
@@ -461,17 +448,17 @@ class data:
         
 
         response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)
+        responseData = json.loads(response.text)
 
+        #clean response data
         output = []
-        for song in response_data['tracks']:
+        for song in responseData['tracks']:
             output.append(self.cleanTrackData(song))
-
-        print(response_data['seeds'])
 
         return output
 
-    def search(self,name, artist,searchType, limit=None):
+    def search(self, name, artist, searchType, limit=None):
+        #https://developer.spotify.com/documentation/web-api/reference/search/search/
 
         #could overlay simple ML here to find best match to our track
         #eventually want to feed in artists separate from track name
@@ -486,9 +473,9 @@ class data:
         if not limit:
             limit = 1
 
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        api_endpoint = "{}/search?q={}+artist:{}&type={}&limit={}&market=US".format(SPOTIFY_API_URL,name,artist,searchType,limit)
+        apiEndpoint = "{}/search?q={}+artist:{}&type={}&limit={}&market=US".format(SPOTIFY_API_URL,name,artist,searchType,limit)
         response = requests.get(api_endpoint, headers=authorization_header)
         if response.status_code ==429:
             try:
