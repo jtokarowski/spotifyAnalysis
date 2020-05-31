@@ -190,7 +190,7 @@ class data:
         splitURI = URI.split(":")
         return splitURI[2]
 
-     def calculateEuclideanDistance(self, track, target, audioFeatures, methodology):
+    def calculateEuclideanDistance(self, track, target, audioFeatures, methodology):
         #returns total distance^2 for 2 given tracks
         totalEuclideanDistance = 0 
         for feature in audioFeatures:
@@ -256,7 +256,7 @@ class data:
             for i in range(runs):
                 offset += 50
                 newApiEndpoint = "{}/me/playlists?limit=50&offset={}".format(SPOTIFY_API_URL, offset)
-                currentUserPlaylistsResponse = requests.get(newApiEndpoint, headers=authorization_header)
+                currentUserPlaylistsResponse = requests.get(newApiEndpoint, headers=authorizationHeader)
                 responseData = json.loads(currentUserPlaylistsResponse.text)
                 currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
@@ -358,12 +358,22 @@ class data:
 
         for track in rawTracks:
             cleanTrackData = {} 
-            cleanTrackData['trackName'] = track['track']['name'].title()
-            cleanTrackData['trackID'] = track['track']['id']
+            try:
+                trackName = track['track']['name'].title()
+                trackID = track['track']['id']
+                artists = track['track']['artists']
+            except:
+                trackName = track['name'].title()
+                trackID = track['id']
+                artists = track['artists']
+            
+            
+            cleanTrackData['trackName'] = trackName
+            cleanTrackData['trackID'] = trackID
             
             artistNameList = []
             artistIdList = []
-            for artist in track['track']['artists']:
+            for artist in artists:
                 artistNameList.append(artist['name'])
                 artistIdList.append(artist['id'])
                 
@@ -374,6 +384,7 @@ class data:
             cleanTracks.append(cleanTrackData)
         
         return cleanTracks
+
 
     def getRecentTracks(self):
         #https://developer.spotify.com/documentation/web-api/reference/player/get-recently-played/
@@ -413,7 +424,7 @@ class data:
    
     def getTop50(self):
         #static link for global top50
-        return getPlaylistTracks(self, "spotify:playlist:37i9dQZEVXbMDoHDwVN2tF"):
+        return getPlaylistTracks(self, "spotify:playlist:37i9dQZEVXbMDoHDwVN2tF")
 
     def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
         #https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/
