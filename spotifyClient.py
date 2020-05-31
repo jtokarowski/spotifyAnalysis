@@ -41,7 +41,7 @@ elif ENV == 'heroku':
 
 
 SCOPE = "playlist-modify-private,playlist-modify-public,playlist-read-collaborative,playlist-read-private,user-read-recently-played,user-top-read"
-STATE = "" #Should create a random string generator here to make a new state for each request
+STATE = "" #TODO Should create a random string generator here to make a new state for each request
 
 #grab date program is being run
 td = date.today()
@@ -134,6 +134,7 @@ class create:
         self.access_token = access_token
 
     def newPlaylist(self, userid, playlistName, description=None):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/create-playlist/
 
         if description is None:
             description = "None"
@@ -148,15 +149,25 @@ class create:
 
         return response_data
 
-    def addSongs(self, plid, uriList):
-        if type(uriList) == list:
-            uriList = ",".join(uriList)
+    def addTracks(self, playlistID, uriList):
+        #https://developer.spotify.com/documentation/web-api/reference/playlists/add-tracks-to-playlist/
 
-        user_playlist_endpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, plid,uriList)
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-        response = requests.post(user_playlist_endpoint, headers=authorization_header)
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
 
-        return response
+        apiLimit = 50 #spotify playlist addition limit
+        for i in range(0, len(uriList), apiLimit):  
+            listToSend = uriList[i:i + apiLimit]
+            stringList = ",".join(listToSend)
+            
+            userPlaylistEndpoint = "{}/playlists/{}/tracks?uris={}".format(SPOTIFY_API_URL, playlistID, stringList)
+            response = requests.post(userPlaylistEndpoint, headers = authorizationHeader)
+
+            if response.status_code == 201:
+                continue
+            else:
+                return "Error code: {}, {}".format(response.status_code, response.text)
+
+        return "All tracks added successfully"
 
 class data:
     def __init__(self, access_token):
@@ -179,6 +190,17 @@ class data:
         splitURI = URI.split(":")
         return splitURI[2]
 
+     def calculateEuclideanDistance(self, track, target, audioFeatures, methodology):
+        #returns total distance^2 for 2 given tracks
+        totalEuclideanDistance = 0 
+        for feature in audioFeatures:
+            euclideanDistance = (track['audioFeatures'][feature]*100) - (target['audioFeatures'][feature]*100)
+            if methodology == 'absValue':
+                totalEuclideanDistance += abs(euclideanDistance)
+            else:
+                totalEuclideanDistance += euclideanDistance^2
+
+        return totalEuclideanDistance
 
     def profile(self):
         #https://developer.spotify.com/documentation/web-api/reference/users-profile/
@@ -220,10 +242,10 @@ class data:
 
         currentUserPlaylists = []
         
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
+        authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
         apiEndpoint = "{}/me/playlists?limit=50".format(SPOTIFY_API_URL)
         
-        currentUserPlaylistsResponse = requests.get(apiEndpoint, headers=authorization_header)
+        currentUserPlaylistsResponse = requests.get(apiEndpoint, headers=authorizationHeader)
         responseData = json.loads(currentUserPlaylistsResponse.text)
         currentUserPlaylists.extend(self.reformatPlaylists(responseData))
 
@@ -353,17 +375,6 @@ class data:
         
         return cleanTracks
 
-    def getGenreSeeds(self):
-
-        authorization_header = {"Authorization": "Bearer {}".format(self.access_token)}
-
-        api_endpoint = "{}/recommendations/available-genre-seeds".format(SPOTIFY_API_URL)
-        response = requests.get(api_endpoint, headers=authorization_header)
-        response_data = json.loads(response.text)     
-
-        return response_data['genres']
-
-
     def getRecentTracks(self):
         #https://developer.spotify.com/documentation/web-api/reference/player/get-recently-played/
         apiLimit = 50
@@ -386,22 +397,17 @@ class data:
         #https://developer.spotify.com/documentation/web-api/reference/personalization/get-users-top-artists-and-tracks/
 
         authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
-        apiEndpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL,topType,term, limit)
-        response = requests.get(apiEndpoint, headers=authorizationHeader)
+        apiEndpoint = "{}/me/top/{}?time_range={}&limit={}".format(SPOTIFY_API_URL, topType, term, limit)
+        response = requests.get(apiEndpoint, headers = authorizationHeader)
         responseData = json.loads(response.text) 
 
         cleanedData = []
         if topType == 'tracks':
-            for track in responseData['items']:
-                cleanTrack = {}
-                cleanTrack['trackID'] = track['id']
-                cleanedData.append(cleanTrack)
+            for rawTrack in responseData['items']:
+                cleanedData.append(rawTrack['id'])
         else:
-            for artist in responseData['items']:
-                cleanArtist = {}
-                cleanArtist['artistID'] = artist['id']
-                cleanArtist['genres'] = artist['genres']
-                cleanedData.append(cleanArtist)
+            for rawArtist in responseData['items']:
+                cleanedData.append(rawArtist['id'])
 
         return cleanedData
    
@@ -409,9 +415,8 @@ class data:
         #static link for global top50
         return getPlaylistTracks(self, "spotify:playlist:37i9dQZEVXbMDoHDwVN2tF"):
 
-    def getRecommendations(self, targets=None, market=None, apiLimit=None, seedArtists=None, seedGenres=None, seedTracks=None):
+    def getRecommendations(self, targets=None, market=None, limit=None, seed_artists=None, seed_genres=None, seed_tracks=None):
         #https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/
-
         #TODO: add funcitonality to examine pool size before and after filters
 
         authorizationHeader = {"Authorization": "Bearer {}".format(self.access_token)}
@@ -422,18 +427,18 @@ class data:
         else:
             apiEndpoint+="market=US"
 
-        if not apiLimit:
-            apiLimit = 20
+        if not limit:
+            limit = 20
 
-        apiEndpoint+="&limit={}".format(apiLimit)
+        apiEndpoint+="&limit={}".format(limit)
 
         #SEEDS
-        if seedArtists:
-            apiEndpoint+="&seed_artists={}".format(seedArtists)
-        if seedGenres:
-            apiEndpoint+="&seed_genres={}".format(seedGenres)
-        if seedTracks:
-            apiEndpoint+="&seed_tracks={}".format(seedTracks)
+        if seed_artists:
+            apiEndpoint+="&seed_artists={}".format(seed_artists)
+        if seed_genres:
+            apiEndpoint+="&seed_genres={}".format(seed_genres)
+        if seed_tracks:
+            apiEndpoint+="&seed_tracks={}".format(seed_tracks)
 
         #TARGETS, MINS, MAXS
         if targets:
@@ -444,18 +449,13 @@ class data:
                 for prefix in ["min_", "max_", "target_"]:
                     param = prefix + attribute
                     if param in targets:
-                        api_endpoint+="&{}={}".format(param,targets[param])
+                        apiEndpoint+="&{}={}".format(param,targets[param])
         
 
-        response = requests.get(api_endpoint, headers=authorization_header)
-        responseData = json.loads(response.text)
+        recommendationsResponse = requests.get(apiEndpoint, headers = authorizationHeader)
+        recommendationsResponseData = json.loads(recommendationsResponse.text)
 
-        #clean response data
-        output = []
-        for song in responseData['tracks']:
-            output.append(self.cleanTrackData(song))
-
-        return output
+        return recommendationsResponseData['tracks']
 
     def search(self, name, artist, searchType, limit=None):
         #https://developer.spotify.com/documentation/web-api/reference/search/search/
